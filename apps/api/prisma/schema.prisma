@@ -1,0 +1,172 @@
+// Dev: SQLite. Production: change provider to "postgresql" and re-run migrations.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  telegramId  String   @unique
+  tgFirstName String
+  tgLastName  String?
+  tgUsername  String?
+  displayName String
+  phone       String?
+  language    String   @default("ru") // ru | uz
+  role        String   @default("customer") // customer | courier | admin
+  isBlocked   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  addresses  Address[]
+  favorites  Favorite[]
+  orders     Order[]    @relation("CustomerOrders")
+  deliveries Order[]    @relation("CourierOrders")
+}
+
+model Address {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  label     String? // "Uy", "Ish joyi"
+  text      String
+  lat       Float?
+  lng       Float?
+  comment   String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Category {
+  id        Int     @id @default(autoincrement())
+  nameUz    String
+  nameRu    String
+  imageUrl  String?
+  sortOrder Int     @default(0)
+  isHidden  Boolean @default(false)
+
+  dishes  Dish[]
+  banners Banner[]
+}
+
+model Dish {
+  id            Int      @id @default(autoincrement())
+  categoryId    Int
+  nameUz        String
+  nameRu        String
+  descriptionUz String?
+  descriptionRu String?
+  ingredientsUz String? // comma-separated, shown as chips
+  ingredientsRu String?
+  imageUrl      String?
+  price         Int // UZS
+  weight        String?
+  isNew         Boolean  @default(false)
+  isHit         Boolean  @default(false)
+  isAvailable   Boolean  @default(true)
+  isHidden      Boolean  @default(false)
+  pickupOnly    Boolean  @default(false) // e.g. hot drinks: orderable for pickup, not delivered
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category   Category    @relation(fields: [categoryId], references: [id])
+  favorites  Favorite[]
+  orderItems OrderItem[]
+  banners    Banner[]
+
+  @@index([categoryId])
+}
+
+model Favorite {
+  userId    Int
+  dishId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@id([userId, dishId])
+}
+
+model Order {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  courierId      Int?
+  type           String // delivery | pickup
+  status         String    @default("new")
+  paymentMethod  String // cash | transfer
+  addressText    String?
+  addressLat     Float?
+  addressLng     Float?
+  addressComment String?
+  scheduledAt    DateTime?
+  comment        String?
+  itemsTotal     Int
+  deliveryFee    Int       @default(0)
+  discount       Int       @default(0)
+  total          Int
+  cancelReason   String?
+  // Telegram messages that show this order (kept in sync when the status changes)
+  staffChatId      String?
+  staffMessageId   Int?
+  courierMessageId Int?
+  createdAt      DateTime  @default(now())
+  acceptedAt     DateTime?
+  cookingAt      DateTime?
+  readyAt        DateTime?
+  deliveringAt   DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+
+  user    User        @relation("CustomerOrders", fields: [userId], references: [id])
+  courier User?       @relation("CourierOrders", fields: [courierId], references: [id])
+  items   OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id       Int     @id @default(autoincrement())
+  orderId  Int
+  dishId   Int?
+  nameUz   String
+  nameRu   String
+  price    Int // snapshot at order time
+  quantity Int
+  comment  String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dish  Dish? @relation(fields: [dishId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+model Banner {
+  id         Int     @id @default(autoincrement())
+  imageUrl   String
+  titleUz    String?
+  titleRu    String?
+  subtitleUz String?
+  subtitleRu String?
+  categoryId Int?
+  dishId     Int?
+  sortOrder  Int     @default(0)
+  isActive   Boolean @default(true)
+
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  dish     Dish?     @relation(fields: [dishId], references: [id], onDelete: SetNull)
+}
+
+model Setting {
+  key   String @id
+  value String // JSON-encoded
+}
