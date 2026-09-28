@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onActivated, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useCatalogStore } from '@/stores/catalog';
 import { name } from '@/utils/format';
 import AppIcon from '@/components/AppIcon.vue';
@@ -13,6 +13,7 @@ import { useKeepScroll } from '@/composables/useKeepScroll';
 defineOptions({ name: 'MenuPage' });
 
 const route = useRoute();
+const router = useRouter();
 const catalog = useCatalogStore();
 
 const selected = ref<number | null>(null);
@@ -31,10 +32,17 @@ watch(selected, () => {
   if (onMenu() && window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
+/**
+ * The chosen category is kept in the address (/menu?category=13). "Back" from a dish returns to exactly
+ * this address, so the filter survives even if the phone re-creates the page (WebView cache, low memory, reload).
+ */
+function selectCategory(id: number | null) {
+  selected.value = id;
+  router.replace({ name: 'menu', query: id === null ? {} : { category: String(id) } });
+}
+
 useKeepScroll();
-onActivated(() => {
-  if (route.query.category !== undefined) applyRoute();
-});
+onActivated(applyRoute);
 
 const sections = computed(() => {
   const cats = selected.value === null ? catalog.categories : catalog.categories.filter((c) => c.id === selected.value);
@@ -53,7 +61,7 @@ const sections = computed(() => {
           <RouterLink :to="{ name: 'search' }" class="icon-btn"><AppIcon name="search" :size="20" /></RouterLink>
         </template>
       </PageHeader>
-      <CategoryChips v-model="selected" :categories="catalog.categories" with-all />
+      <CategoryChips :model-value="selected" :categories="catalog.categories" with-all @update:model-value="selectCategory" />
     </StickyTop>
 
     <p v-if="catalog.loading && !catalog.categories.length" class="text-muted py-10 text-center text-sm">{{ $t('common.loading') }}</p>
