@@ -31,3 +31,12 @@ if (!parsed.success) {
 export const env = parsed.data;
 /** Dev auth is never allowed in production, regardless of the flag. */
 export const devAuthEnabled = env.ALLOW_DEV_AUTH && env.NODE_ENV !== 'production';
+
+/**
+ * Dev login ("Authorization: dev <id>") is for the local browser / phone on the same Wi-Fi only.
+ * Anything that came through Cloudflare (tunnel) or Vercel is public internet and must use real Telegram auth.
+ */
+export function devAuthAllowed(headers: Record<string, string | string[] | undefined>): boolean {
+  if (!devAuthEnabled) return false;
+  return !headers['cf-connecting-ip'] && !headers['cf-ray'] && !headers['x-vercel-id'];
+}

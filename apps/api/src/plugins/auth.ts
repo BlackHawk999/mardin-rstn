@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 import type { User } from '@prisma/client';
 import { prisma } from '../db.js';
-import { devAuthEnabled, env } from '../env.js';
+import { devAuthAllowed, env } from '../env.js';
 import { parseInitData, type TelegramUser } from '../telegram/validateInitData.js';
 
 declare module 'fastify' {
@@ -27,7 +27,7 @@ async function resolveUser(req: FastifyRequest): Promise<User | null> {
     return upsertFromTelegram(parsed.user);
   }
 
-  if (scheme === 'dev' && value && devAuthEnabled) {
+  if (scheme === 'dev' && value && devAuthAllowed(req.headers)) {
     return upsertFromTelegram({ id: Number(value), first_name: 'Dev', username: 'dev_user', language_code: 'ru' });
   }
 

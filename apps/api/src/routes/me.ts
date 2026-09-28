@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { toAddressDto, toUserDto } from '../dto.js';
-import { devAuthEnabled, env } from '../env.js';
+import { devAuthAllowed, env } from '../env.js';
 import { normalizePhone, parseContactResponse } from '../telegram/validateInitData.js';
 
 export async function meRoutes(app: FastifyInstance) {
@@ -41,7 +41,7 @@ export async function meRoutes(app: FastifyInstance) {
       if (!parsed) return reply.code(400).send({ error: 'invalid_contact_signature' });
       if (String(parsed.userId) !== req.user.telegramId) return reply.code(400).send({ error: 'contact_user_mismatch' });
       phone = parsed.phone;
-    } else if (body.phone && devAuthEnabled) {
+    } else if (body.phone && devAuthAllowed(req.headers)) {
       phone = normalizePhone(body.phone);
     }
     if (!phone) return reply.code(400).send({ error: 'phone_required' });
