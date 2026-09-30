@@ -235,8 +235,8 @@ textarea.input {
 /* ---- Liquid-glass bottom navigation ---- */
 .glass-nav {
   position: fixed;
-  left: 14px;
-  right: 14px;
+  left: 10px;
+  right: 10px;
   bottom: calc(10px + var(--safe-bottom));
   z-index: 40;
   height: var(--nav-h);
@@ -270,7 +270,7 @@ textarea.input {
   left: 0;
   height: 100%;
   width: 20%;
-  padding: 7px 5px;
+  padding: 6px 3px;
   pointer-events: none;
   transform: translateX(calc(var(--i, 0) * 100%));
   transition: transform 0.55s cubic-bezier(0.3, 1.45, 0.45, 1); /* spring-like overshoot */
@@ -281,7 +281,8 @@ textarea.input {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 999px;
+  /* Not a full stadium: round ends would clip long labels like «Избранное». */
+  border-radius: 22px;
   background:
     radial-gradient(120% 120% at 50% -10%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.22) 55%, rgba(138, 90, 60, 0.08) 100%);
   border: 1px solid rgba(255, 255, 255, 0.75);
@@ -311,6 +312,8 @@ textarea.input {
   height: 100%;
   font-size: 10.5px;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
   color: var(--muted);
   transition: color 0.25s;
 }
