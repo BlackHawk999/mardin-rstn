@@ -103,7 +103,7 @@ function support() {
     <footer class="text-muted pt-6 pb-2 text-center text-[12px] leading-relaxed">
       <p>
         Made with <span class="text-accent inline-block animate-[heartbeat_1.6s_ease-in-out_infinite]" aria-label="love">♥</span> by
-        <span class="text-text font-semibold">Elyor</span>
+        <span class="signature">Elyor</span>
       </p>
       <p class="mt-0.5 text-[11px] opacity-70">{{ catalog.settings?.restaurantName ?? 'Mardin' }} · v{{ appVersion }}</p>
     </footer>
