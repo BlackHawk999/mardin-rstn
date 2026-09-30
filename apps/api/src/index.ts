@@ -15,6 +15,7 @@ import { meRoutes } from './routes/me.js';
 import { orderRoutes } from './routes/orders.js';
 import { bot, setupBot } from './bot/index.js';
 import { registerStaffHandlers } from './bot/staff.js';
+import { registerStaticSites } from './static.js';
 
 const app = Fastify({
   logger:
@@ -48,6 +49,7 @@ await app.register(meRoutes, { prefix: '/api' });
 await app.register(orderRoutes, { prefix: '/api' });
 await app.register(geoRoutes, { prefix: '/api' });
 await app.register(adminRoutes, { prefix: '/api/admin' });
+await registerStaticSites(app);
 
 registerStaffHandlers();
 

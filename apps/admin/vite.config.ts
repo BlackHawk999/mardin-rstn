@@ -3,7 +3,9 @@ import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath, URL } from 'node:url';
 
-export default defineConfig({
+// Production build is served by the API under /admin/ (see apps/api/src/static.ts); dev stays at the root.
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/admin/' : '/',
   plugins: [vue(), tailwindcss()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
@@ -13,4 +15,4 @@ export default defineConfig({
       '/uploads': { target: 'http://localhost:3000', changeOrigin: true },
     },
   },
-});
+}));
