@@ -12,6 +12,11 @@ const schema = z.object({
     .string()
     .optional()
     .transform((v) => v === 'true'),
+  // Set to false locally: only one process may poll a bot token, and production (the server) already does.
+  BOT_POLLING: z
+    .string()
+    .optional()
+    .transform((v) => v !== 'false'),
   // Admin panel login. Leave ADMIN_PASSWORD empty to disable password login.
   ADMIN_LOGIN: z.string().default('admin'),
   ADMIN_PASSWORD: z.string().optional().transform((v) => (v ? v : undefined)),

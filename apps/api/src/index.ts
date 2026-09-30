@@ -56,12 +56,16 @@ registerStaffHandlers();
 await app.listen({ port: env.PORT, host: '0.0.0.0' });
 
 // Long polling is enough for development and small deployments; switch to a webhook later if needed.
-try {
-  await bot.init();
-  await setupBot();
-  bot.start({ onStart: (me) => app.log.info(`Bot @${me.username} started`) }).catch((e) => app.log.error(e, 'Bot polling stopped'));
-} catch (e) {
-  app.log.error(e, 'Bot failed to start (check BOT_TOKEN). API keeps running.');
+if (!env.BOT_POLLING) {
+  app.log.info('BOT_POLLING=false: the bot is not started (the server handles it).');
+} else {
+  try {
+    await bot.init();
+    await setupBot();
+    bot.start({ onStart: (me) => app.log.info(`Bot @${me.username} started`) }).catch((e) => app.log.error(e, 'Bot polling stopped'));
+  } catch (e) {
+    app.log.error(e, 'Bot failed to start (check BOT_TOKEN). API keeps running.');
+  }
 }
 
 const shutdown = async () => {
