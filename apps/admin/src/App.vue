@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { api } from '@/api/client';
+import { playNewOrderSound } from '@/utils/newOrderSound';
 
 const route = useRoute();
 const router = useRouter();
@@ -19,31 +20,16 @@ const nav = [
 
 const isPublic = computed(() => Boolean(route.meta.public));
 
-// New-order counter in the sidebar, refreshed every 15s; beeps when it grows.
+// New-order counter in the sidebar, refreshed every 15s; plays the chime + «Новый заказ!» when it grows.
 const newOrders = ref(0);
 let timer: number | undefined;
 let lastCount: number | null = null;
-
-function beep() {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.frequency.value = 880;
-    gain.gain.value = 0.08;
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.25);
-  } catch {
-    /* audio not allowed */
-  }
-}
 
 async function poll() {
   if (!auth.isAuthed()) return;
   try {
     const stats = await api.stats();
-    if (lastCount !== null && stats.newOrders > lastCount) beep();
+    if (lastCount !== null && stats.newOrders > lastCount) playNewOrderSound();
     lastCount = stats.newOrders;
     newOrders.value = stats.newOrders;
   } catch {
