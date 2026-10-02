@@ -71,6 +71,12 @@ const stars = [
   [196, 22, 1], [226, 48, 2], [252, 14, 1], [288, 30, 2], [306, 64, 1], [318, 12, 1], [372, 70, 2], [380, 24, 1],
   [214, 80, 1], [240, 90, 1.5], [352, 92, 1], [268, 70, 1],
 ] as const;
+// Bright glowing stars around the moon: [x, y, size, phase offset s].
+const brightStars = [
+  [312, 24, 1, 0], [374, 38, 1.2, -1.1], [320, 58, 0.8, -2.3], [366, 12, 0.9, -0.6], [298, 46, 0.7, -3],
+] as const;
+/** A four-point sparkle centred on 0,0 (concave sides), scaled per star. */
+const SPARKLE = 'M0-6Q0 0 6 0Q0 0 0 6Q0 0-6 0Q0 0 0-6Z';
 
 // Sun rays as short strokes around (cx, cy), only the upper half (below the horizon is hidden by houses anyway).
 function rays(cx: number, cy: number, r1: number, r2: number, count: number) {
@@ -158,6 +164,10 @@ function hatch(h: House, i: number) {
           <stop offset="0" stop-color="#262c40" stop-opacity="0.95" />
           <stop offset="1" stop-color="#262c40" stop-opacity="0.1" />
         </linearGradient>
+        <radialGradient id="mardin-star-glow">
+          <stop offset="0" stop-color="#fff2c2" stop-opacity="1" />
+          <stop offset="1" stop-color="#fff2c2" stop-opacity="0" />
+        </radialGradient>
       </defs>
 
       <!-- Sky wash (none on a clear day: the page itself is the sky) -->
@@ -204,6 +214,13 @@ function hatch(h: House, i: number) {
             stroke-width="0.9"
           />
         </template>
+        <!-- Bright stars next to the moon: a soft halo and a sparkle that slowly breathe -->
+        <g v-for="([x, y, size, delay], i) in brightStars" :key="'g' + i" :transform="`translate(${x} ${y}) scale(${size})`">
+          <g class="mardin-sky__glow" :style="{ animationDelay: `${delay}s` }">
+            <circle r="9" fill="url(#mardin-star-glow)" stroke="none" />
+            <path :d="SPARKLE" fill="#fff6d8" stroke="currentColor" stroke-width="0.5" />
+          </g>
+        </g>
       </g>
 
       <!-- Birds flying across (day and dawn) -->
@@ -432,6 +449,21 @@ function hatch(h: House, i: number) {
 .mardin-sky__star {
   animation: star-twinkle 3s ease-in-out infinite;
 }
+.mardin-sky__glow {
+  transform-origin: 0 0;
+  animation: star-glow 3.4s ease-in-out infinite;
+}
+@keyframes star-glow {
+  0%,
+  100% {
+    scale: 0.7;
+    opacity: 0.55;
+  }
+  50% {
+    scale: 1.15;
+    opacity: 1;
+  }
+}
 @keyframes star-twinkle {
   0%,
   100% {
@@ -445,6 +477,7 @@ function hatch(h: House, i: number) {
   .mardin-sky__rise,
   .mardin-sky__set,
   .mardin-sky__star,
+  .mardin-sky__glow,
   .mardin-sky__sun,
   .mardin-sky__cloud,
   .mardin-sky__bird,
