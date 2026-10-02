@@ -7,6 +7,7 @@ import AppIcon from '@/components/AppIcon.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import MardinSketch from '@/components/MardinSketch.vue';
 import DishesSketch from '@/components/DishesSketch.vue';
+import { useSkyPhase } from '@/utils/sky';
 
 const auth = useAuthStore();
 const catalog = useCatalogStore();
@@ -45,6 +46,7 @@ function openDeveloper() {
 }
 
 const settings = computed(() => catalog.settings);
+const sky = useSkyPhase(computed(() => settings.value && { lat: settings.value.restaurantLat, lng: settings.value.restaurantLng }));
 const phoneHref = computed(() => `tel:${settings.value?.restaurantPhone.replace(/[^\d+]/g, '') ?? ''}`);
 
 function openMap() {
@@ -65,7 +67,7 @@ function support() {
 <template>
   <div class="page relative isolate space-y-4">
     <!-- Decorative old-town sketch behind the header -->
-    <div class="profile-sketch" aria-hidden="true"><MardinSketch /></div>
+    <div class="profile-sketch" aria-hidden="true"><MardinSketch :phase="sky" /></div>
 
     <PageHeader :title="$t('profile.title')" />
 

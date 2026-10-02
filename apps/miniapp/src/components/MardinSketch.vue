@@ -2,7 +2,12 @@
 /**
  * Pencil-style line drawing of Mardin's old town: stone houses stepping up the hill, a domed mosque and a minaret.
  * Purely decorative background (profile page). Houses are filled with the page color so rows in front hide rows behind.
+ * The sky follows the real time of day: sun and birds, sunrise, sunset, or a moon with stars and lit windows.
  */
+import type { SkyPhase } from '@/utils/sky';
+
+withDefaults(defineProps<{ phase?: SkyPhase }>(), { phase: 'day' });
+
 type House = { x: number; base: number; w: number; h: number };
 
 // Back rows first: later houses cover earlier ones.
@@ -49,6 +54,20 @@ function windows(h: House) {
   });
 }
 
+// Night sky: [x, y, size]; small ones are dots, bigger ones twinkle as four-point stars.
+const stars = [
+  [196, 22, 1], [226, 48, 2], [252, 14, 1], [288, 30, 2], [306, 64, 1], [318, 12, 1], [372, 70, 2], [380, 24, 1],
+  [214, 80, 1], [240, 90, 1.5], [352, 92, 1], [268, 70, 1],
+] as const;
+
+// Sun rays as short strokes around (cx, cy), only the upper half (below the horizon is hidden by houses anyway).
+function rays(cx: number, cy: number, r1: number, r2: number, count: number) {
+  return Array.from({ length: count }, (_, i) => {
+    const a = Math.PI + (Math.PI * (i + 0.5)) / count;
+    return `M${cx + r1 * Math.cos(a)} ${cy + r1 * Math.sin(a)}L${cx + r2 * Math.cos(a)} ${cy + r2 * Math.sin(a)}`;
+  }).join('');
+}
+
 /** A few short diagonal strokes on the right side of some walls, like pencil shading. */
 function hatch(h: House, i: number) {
   if (i % 3 !== 1) return '';
@@ -62,11 +81,62 @@ function hatch(h: House, i: number) {
 </script>
 
 <template>
-  <svg class="mardin-sketch" viewBox="0 0 390 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <svg class="mardin-sketch" :class="`mardin-sketch--${phase}`" viewBox="0 0 390 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <g fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
-      <!-- Sun and birds -->
-      <circle cx="342" cy="46" r="15" stroke-dasharray="2 3" />
-      <path d="M186 40q4-4 8 0q4-4 8 0M214 56q3-3 6 0q3-3 6 0M300 74q3-3 6 0q3-3 6 0" />
+      <defs>
+        <linearGradient id="mardin-sky-dawn" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#f4b48a" stop-opacity="0.9" />
+          <stop offset="0.7" stop-color="#f7d6c0" stop-opacity="0.3" />
+          <stop offset="1" stop-color="#f7d6c0" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="mardin-sky-dusk" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#e8875a" stop-opacity="1" />
+          <stop offset="0.5" stop-color="#d98a9a" stop-opacity="0.55" />
+          <stop offset="1" stop-color="#a98bb5" stop-opacity="0.15" />
+        </linearGradient>
+        <linearGradient id="mardin-sky-night" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2f3b66" stop-opacity="0.9" />
+          <stop offset="1" stop-color="#2f3b66" stop-opacity="0.05" />
+        </linearGradient>
+      </defs>
+
+      <!-- Sky wash (none in the daytime: the page itself is the sky) -->
+      <rect v-if="phase !== 'day'" x="0" y="0" width="390" height="150" :fill="`url(#mardin-sky-${phase})`" stroke="none" />
+
+      <!-- Day: sun and birds -->
+      <g v-if="phase === 'day'">
+        <circle cx="342" cy="46" r="15" stroke-dasharray="2 3" />
+        <path d="M186 40q4-4 8 0q4-4 8 0M214 56q3-3 6 0q3-3 6 0M300 74q3-3 6 0q3-3 6 0" />
+      </g>
+
+      <!-- Dawn: a small sun rising behind the right-hand houses, thin rays, two early birds -->
+      <g v-else-if="phase === 'dawn'" class="mardin-sky__rise">
+        <circle cx="350" cy="110" r="14" fill="#f6c69b" fill-opacity="0.8" />
+        <path :d="rays(350, 110, 20, 28, 9)" stroke-width="0.9" />
+        <path d="M250 56q3-3 6 0q3-3 6 0M276 44q3-3 6 0q3-3 6 0" />
+      </g>
+
+      <!-- Dusk: a big sun sinking behind the roofs, long cloud streaks -->
+      <g v-else-if="phase === 'dusk'" class="mardin-sky__set">
+        <circle cx="300" cy="104" r="20" fill="#ef9b6c" fill-opacity="0.85" />
+        <path :d="rays(300, 104, 26, 34, 11)" stroke-width="0.8" opacity="0.8" />
+        <path d="M206 70h46M222 76h58M326 60h44M318 66h30" stroke-width="0.9" opacity="0.8" />
+      </g>
+
+      <!-- Night: crescent moon and stars -->
+      <g v-else>
+        <path d="M344 30a16 16 0 1 0 14 24a12 12 0 1 1 -14-24z" fill="#f3e3b5" fill-opacity="0.9" />
+        <template v-for="([x, y, size], i) in stars" :key="i">
+          <circle v-if="size === 1" :cx="x" :cy="y" r="0.9" fill="currentColor" stroke="none" />
+          <path
+            v-else
+            class="mardin-sky__star"
+            :style="{ animationDelay: `${-i * 0.7}s` }"
+            :d="`M${x} ${y - size * 2}v${size * 4}M${x - size * 2} ${y}h${size * 4}`"
+            stroke-width="0.9"
+          />
+        </template>
+      </g>
 
       <!-- Hill line -->
       <path d="M0 196C50 182 90 160 130 140S220 112 262 108 350 118 390 132" stroke-dasharray="1 0" opacity="0.6" />
@@ -74,7 +144,7 @@ function hatch(h: House, i: number) {
       <!-- Back row -->
       <g v-for="(h, i) in rows[0]" :key="'a' + i">
         <rect :x="h.x" :y="h.base - h.h" :width="h.w" :height="h.h" fill="var(--bg)" />
-        <path :d="windows(h).join('')" />
+        <path :d="windows(h).join('')" :fill="phase === 'night' ? '#f2b25c' : 'none'" />
       </g>
 
       <!-- Mosque: dome + minaret -->
@@ -92,7 +162,8 @@ function hatch(h: House, i: number) {
       <g v-for="(row, r) in rows.slice(1)" :key="'r' + r">
         <g v-for="(h, i) in row" :key="i">
           <rect :x="h.x" :y="h.base - h.h" :width="h.w" :height="h.h" fill="var(--bg)" />
-          <path :d="windows(h).join('') + hatch(h, i)" />
+          <path :d="windows(h).join('')" :fill="phase === 'night' ? '#f2b25c' : 'none'" />
+          <path :d="hatch(h, i)" />
         </g>
       </g>
     </g>
@@ -106,5 +177,49 @@ function hatch(h: House, i: number) {
   height: 100%;
   color: var(--accent);
   opacity: 0.22;
+}
+/* Colored skies need a bit more presence than the plain daytime line drawing to read at all. */
+.mardin-sketch--dawn,
+.mardin-sketch--dusk {
+  opacity: 0.4;
+}
+.mardin-sketch--night {
+  opacity: 0.38;
+}
+/* Sunrise drifts up a little, sunset down; stars twinkle. */
+.mardin-sky__rise {
+  animation: sky-rise 6s ease-out both;
+}
+.mardin-sky__set {
+  animation: sky-set 6s ease-out both;
+}
+@keyframes sky-rise {
+  from {
+    translate: 0 8px;
+  }
+}
+@keyframes sky-set {
+  from {
+    translate: 0 -8px;
+  }
+}
+.mardin-sky__star {
+  animation: star-twinkle 3s ease-in-out infinite;
+}
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mardin-sky__rise,
+  .mardin-sky__set,
+  .mardin-sky__star {
+    animation: none;
+  }
 }
 </style>
