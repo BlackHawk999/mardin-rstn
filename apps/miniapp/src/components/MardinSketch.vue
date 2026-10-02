@@ -68,6 +68,17 @@ function rays(cx: number, cy: number, r1: number, r2: number, count: number) {
   }).join('');
 }
 
+// Flying birds: start point, size, flight duration and phase offset (s). They cross the sky left to right.
+const dayBirds = [
+  { x: 150, y: 44, s: 1, dur: 26, delay: 0 },
+  { x: 170, y: 58, s: 0.75, dur: 30, delay: -9 },
+  { x: 130, y: 70, s: 0.8, dur: 34, delay: -18 },
+];
+const dawnBirds = [
+  { x: 200, y: 56, s: 0.75, dur: 30, delay: -4 },
+  { x: 220, y: 44, s: 0.75, dur: 34, delay: -16 },
+];
+
 /** A few short diagonal strokes on the right side of some walls, like pencil shading. */
 function hatch(h: House, i: number) {
   if (i % 3 !== 1) return '';
@@ -103,17 +114,17 @@ function hatch(h: House, i: number) {
       <!-- Sky wash (none in the daytime: the page itself is the sky) -->
       <rect v-if="phase !== 'day'" x="0" y="0" width="390" height="150" :fill="`url(#mardin-sky-${phase})`" stroke="none" />
 
-      <!-- Day: sun and birds -->
+      <!-- Day: a slowly turning sun, drifting clouds and birds flying across -->
       <g v-if="phase === 'day'">
-        <circle cx="342" cy="46" r="15" stroke-dasharray="2 3" />
-        <path d="M186 40q4-4 8 0q4-4 8 0M214 56q3-3 6 0q3-3 6 0M300 74q3-3 6 0q3-3 6 0" />
+        <circle class="mardin-sky__sun" cx="342" cy="46" r="15" stroke-dasharray="2 3" />
+        <path class="mardin-sky__cloud" d="M232 30h34q1-7-6-8q-2-7-10-5q-6-5-11 2q-7 0-7 11z" fill="var(--bg)" />
+        <path class="mardin-sky__cloud mardin-sky__cloud--slow" d="M282 86h26q1-6-5-6q-2-5-8-4q-5-4-9 2q-5 0-4 8z" fill="var(--bg)" />
       </g>
 
-      <!-- Dawn: a small sun rising behind the right-hand houses, thin rays, two early birds -->
+      <!-- Dawn: a small sun rising behind the right-hand houses, thin rays (plus two early birds above) -->
       <g v-else-if="phase === 'dawn'" class="mardin-sky__rise">
         <circle cx="350" cy="110" r="14" fill="#f6c69b" fill-opacity="0.8" />
         <path :d="rays(350, 110, 20, 28, 9)" stroke-width="0.9" />
-        <path d="M250 56q3-3 6 0q3-3 6 0M276 44q3-3 6 0q3-3 6 0" />
       </g>
 
       <!-- Dusk: a big sun sinking behind the roofs, long cloud streaks -->
@@ -136,6 +147,15 @@ function hatch(h: House, i: number) {
             stroke-width="0.9"
           />
         </template>
+      </g>
+
+      <!-- Birds flying across (day and dawn) -->
+      <g v-if="phase === 'day' || phase === 'dawn'">
+        <g v-for="(b, i) in phase === 'day' ? dayBirds : dawnBirds" :key="'b' + i" :transform="`translate(${b.x} ${b.y}) scale(${b.s})`">
+          <g class="mardin-sky__bird" :style="{ animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s` }">
+            <path class="mardin-sky__wings" :style="{ animationDelay: `${i * -0.23}s` }" d="M0 0q4-4 8 0q4-4 8 0" />
+          </g>
+        </g>
       </g>
 
       <!-- Hill line -->
@@ -186,6 +206,68 @@ function hatch(h: House, i: number) {
 .mardin-sketch--night {
   opacity: 0.38;
 }
+/* Day: the dashed sun outline turns slowly, clouds drift, birds fly across flapping their wings. */
+.mardin-sky__sun {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sun-turn 40s linear infinite;
+}
+@keyframes sun-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+.mardin-sky__cloud {
+  animation: cloud-drift 22s ease-in-out infinite alternate;
+}
+.mardin-sky__cloud--slow {
+  animation-duration: 30s;
+  animation-direction: alternate-reverse;
+}
+@keyframes cloud-drift {
+  from {
+    translate: -14px 0;
+  }
+  to {
+    translate: 14px 0;
+  }
+}
+.mardin-sky__bird {
+  animation: bird-fly linear infinite;
+}
+@keyframes bird-fly {
+  0% {
+    translate: 0 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    translate: 120px -10px;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    translate: 240px 4px;
+    opacity: 0;
+  }
+}
+.mardin-sky__wings {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: wings-flap 0.9s ease-in-out infinite;
+}
+@keyframes wings-flap {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 1 0.25;
+  }
+}
 /* Sunrise drifts up a little, sunset down; stars twinkle. */
 .mardin-sky__rise {
   animation: sky-rise 6s ease-out both;
@@ -218,7 +300,11 @@ function hatch(h: House, i: number) {
 @media (prefers-reduced-motion: reduce) {
   .mardin-sky__rise,
   .mardin-sky__set,
-  .mardin-sky__star {
+  .mardin-sky__star,
+  .mardin-sky__sun,
+  .mardin-sky__cloud,
+  .mardin-sky__bird,
+  .mardin-sky__wings {
     animation: none;
   }
 }
