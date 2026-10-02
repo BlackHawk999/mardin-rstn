@@ -7,6 +7,7 @@ import { useCartStore } from '@/stores/cart';
 import { haptic } from '@/telegram';
 import AppIcon from '@/components/AppIcon.vue';
 import EmptyState from '@/components/EmptyState.vue';
+import MapSketch from '@/components/MapSketch.vue';
 import PageHeader from '@/components/PageHeader.vue';
 
 const cart = useCartStore();
@@ -77,7 +78,9 @@ onActivated(load);
     <PageHeader :title="$t('addresses.title')" back="/profile" />
 
     <p v-if="loading" class="text-muted py-10 text-center text-sm">{{ $t('common.loading') }}</p>
-    <EmptyState v-else-if="addresses.length === 0 && !form" icon="📍" :text="$t('addresses.empty')" />
+    <EmptyState v-else-if="addresses.length === 0 && !form" :text="$t('addresses.empty')">
+      <template #art><MapSketch /></template>
+    </EmptyState>
 
     <div v-else class="space-y-3">
       <div v-for="a in addresses" :key="a.id" class="card flex items-start gap-3 p-4">
@@ -108,6 +111,9 @@ onActivated(load);
         <button type="button" class="btn btn-sm flex-1" :disabled="form.text.trim().length < 3 || saving" @click="save">{{ $t('common.save') }}</button>
       </div>
     </div>
+
+    <!-- Folded map with a route: fills the space under the list -->
+    <MapSketch v-if="addresses.length && !form" class="mt-10" />
 
     <div v-if="!form" class="action-bar action-bar--above-nav">
       <button type="button" class="btn w-full" @click="startAdd"><AppIcon :name="hasMap ? 'map' : 'plus'" :size="18" /> {{ $t('addresses.add') }}</button>

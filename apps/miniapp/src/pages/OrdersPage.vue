@@ -7,6 +7,7 @@ import { formatDate, money } from '@/utils/format';
 import { haptic } from '@/telegram';
 import AppIcon from '@/components/AppIcon.vue';
 import EmptyState from '@/components/EmptyState.vue';
+import CourierSketch from '@/components/CourierSketch.vue';
 import PageHeader from '@/components/PageHeader.vue';
 
 const catalog = useCatalogStore();
@@ -57,7 +58,9 @@ onMounted(async () => {
     </div>
 
     <p v-if="loading" class="text-muted py-10 text-center text-sm">{{ $t('common.loading') }}</p>
-    <EmptyState v-else-if="filtered.length === 0" icon="🧾" :text="$t('orders.empty')" />
+    <EmptyState v-else-if="filtered.length === 0" :text="$t('orders.empty')">
+      <template #art><CourierSketch /></template>
+    </EmptyState>
 
     <div v-else class="space-y-3">
       <RouterLink v-for="o in filtered" :key="o.id" :to="{ name: 'order', params: { id: String(o.id) } }" class="card flex items-center gap-3 p-3">
@@ -80,6 +83,9 @@ onMounted(async () => {
         </div>
         <AppIcon name="chevron" :size="18" class="text-muted flex-shrink-0" />
       </RouterLink>
+
+      <!-- A courier on the way: fills the space under the list -->
+      <CourierSketch class="!mt-10" />
     </div>
   </div>
 </template>
