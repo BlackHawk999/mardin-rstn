@@ -2,11 +2,23 @@
 /**
  * Pencil-style line drawing of Mardin's old town: stone houses stepping up the hill, a domed mosque and a minaret.
  * Purely decorative background (profile page). Houses are filled with the page color so rows in front hide rows behind.
- * The sky follows the real time of day: sun and birds, sunrise, sunset, or a moon with stars and lit windows.
+ * The sky follows the real time of day (sun and birds, sunrise, sunset, moon and stars) and the real weather:
+ * clouds hide the sky, rain and snow fall over the town, and windows glow warm at night and in bad weather.
  */
+import { computed } from 'vue';
+import type { WeatherCondition } from '@rt/shared';
 import type { SkyPhase } from '@/utils/sky';
 
-withDefaults(defineProps<{ phase?: SkyPhase }>(), { phase: 'day' });
+const props = withDefaults(defineProps<{ phase?: SkyPhase; weather?: WeatherCondition }>(), { phase: 'day', weather: 'clear' });
+
+const overcast = computed(() => props.weather !== 'clear');
+/** Lit windows: the cozy part. */
+const glow = computed(() => props.phase === 'night' || props.weather === 'rain' || props.weather === 'snow');
+const windowFill = computed(() => (glow.value ? '#f2b25c' : 'none'));
+const skyWash = computed(() => {
+  if (overcast.value) return props.phase === 'night' || props.phase === 'dusk' ? 'storm-night' : 'storm-day';
+  return props.phase === 'day' ? null : props.phase;
+});
 
 type House = { x: number; base: number; w: number; h: number };
 
@@ -79,6 +91,35 @@ const dawnBirds = [
   { x: 220, y: 44, s: 0.75, dur: 34, delay: -16 },
 ];
 
+// Rain and snow: columns of drops/flakes whose pattern repeats every PERIOD units vertically,
+// so moving the whole layer down by exactly one period loops seamlessly.
+const RAIN_PERIOD = 24;
+const rain = (step: number, len: number, seed: number) =>
+  Array.from({ length: Math.ceil(260 / step) }, (_, c) => {
+    const x = 132 + c * step;
+    const off = ((c * seed) % RAIN_PERIOD) - RAIN_PERIOD;
+    let d = '';
+    for (let y = off; y < 220; y += RAIN_PERIOD) d += `M${x} ${y}l-2 ${len}`;
+    return d;
+  }).join('');
+const rainNear = rain(11, 9, 7);
+const rainFar = rain(7, 5, 13);
+
+const SNOW_PERIOD = 30;
+const snow = (step: number, seed: number) =>
+  Array.from({ length: Math.ceil(260 / step) }, (_, c) => {
+    const x = 132 + c * step;
+    const off = ((c * seed) % SNOW_PERIOD) - SNOW_PERIOD;
+    const flakes: [number, number][] = [];
+    for (let y = off; y < 220; y += SNOW_PERIOD) flakes.push([x + ((c * 5) % 7), y]);
+    return flakes;
+  }).flat();
+const snowNear = snow(17, 11);
+const snowFar = snow(11, 7);
+
+/** A rounded snow cap along a flat roof. */
+const cap = (h: House) => `M${h.x - 1} ${h.base - h.h}q${(h.w + 2) / 2} -6 ${h.w + 2} 0z`;
+
 /** A few short diagonal strokes on the right side of some walls, like pencil shading. */
 function hatch(h: House, i: number) {
   if (i % 3 !== 1) return '';
@@ -92,7 +133,7 @@ function hatch(h: House, i: number) {
 </script>
 
 <template>
-  <svg class="mardin-sketch" :class="`mardin-sketch--${phase}`" viewBox="0 0 390 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <svg class="mardin-sketch" :class="[`mardin-sketch--${phase}`, { 'mardin-sketch--overcast': overcast }]" viewBox="0 0 390 220" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <g fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
       <defs>
         <linearGradient id="mardin-sky-dawn" x1="0" y1="1" x2="0" y2="0">
@@ -109,13 +150,29 @@ function hatch(h: House, i: number) {
           <stop offset="0" stop-color="#2f3b66" stop-opacity="0.9" />
           <stop offset="1" stop-color="#2f3b66" stop-opacity="0.05" />
         </linearGradient>
+        <linearGradient id="mardin-sky-storm-day" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7d8794" stop-opacity="0.75" />
+          <stop offset="1" stop-color="#7d8794" stop-opacity="0.05" />
+        </linearGradient>
+        <linearGradient id="mardin-sky-storm-night" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#262c40" stop-opacity="0.95" />
+          <stop offset="1" stop-color="#262c40" stop-opacity="0.1" />
+        </linearGradient>
       </defs>
 
-      <!-- Sky wash (none in the daytime: the page itself is the sky) -->
-      <rect v-if="phase !== 'day'" x="0" y="0" width="390" height="150" :fill="`url(#mardin-sky-${phase})`" stroke="none" />
+      <!-- Sky wash (none on a clear day: the page itself is the sky) -->
+      <rect v-if="skyWash" x="0" y="0" width="390" height="150" :fill="`url(#mardin-sky-${skyWash})`" stroke="none" />
+
+      <!-- Bad weather: a bank of heavy clouds instead of sun / moon / stars -->
+      <g v-if="overcast" class="mardin-sky__clouds">
+        <path d="M168 40h70q2-14-12-16q-4-14-20-10q-12-12-26 0q-14-2-14 12q-12 0-12 14z" fill="var(--bg)" />
+        <path d="M250 30h84q3-16-14-18q-5-15-24-10q-13-12-29 2q-15-1-15 13q-12 1-10 13z" fill="var(--bg)" />
+        <path d="M318 62h68q2-12-10-14q-4-12-18-8q-11-10-23 1q-12-1-12 11q-9 0-5 10z" fill="var(--bg)" />
+        <path d="M196 70h52q1-10-8-11q-3-9-14-6q-8-8-17 1q-10 0-9 9q-6 0-4 7z" fill="var(--bg)" />
+      </g>
 
       <!-- Day: a slowly turning sun, drifting clouds and birds flying across -->
-      <g v-if="phase === 'day'">
+      <g v-else-if="phase === 'day'">
         <circle class="mardin-sky__sun" cx="342" cy="46" r="15" stroke-dasharray="2 3" />
         <path class="mardin-sky__cloud" d="M232 30h34q1-7-6-8q-2-7-10-5q-6-5-11 2q-7 0-7 11z" fill="var(--bg)" />
         <path class="mardin-sky__cloud mardin-sky__cloud--slow" d="M282 86h26q1-6-5-6q-2-5-8-4q-5-4-9 2q-5 0-4 8z" fill="var(--bg)" />
@@ -150,7 +207,7 @@ function hatch(h: House, i: number) {
       </g>
 
       <!-- Birds flying across (day and dawn) -->
-      <g v-if="phase === 'day' || phase === 'dawn'">
+      <g v-if="!overcast && (phase === 'day' || phase === 'dawn')">
         <g v-for="(b, i) in phase === 'day' ? dayBirds : dawnBirds" :key="'b' + i" :transform="`translate(${b.x} ${b.y}) scale(${b.s})`">
           <g class="mardin-sky__bird" :style="{ animationDuration: `${b.dur}s`, animationDelay: `${b.delay}s` }">
             <path class="mardin-sky__wings" :style="{ animationDelay: `${i * -0.23}s` }" d="M0 0q4-4 8 0q4-4 8 0" />
@@ -164,7 +221,8 @@ function hatch(h: House, i: number) {
       <!-- Back row -->
       <g v-for="(h, i) in rows[0]" :key="'a' + i">
         <rect :x="h.x" :y="h.base - h.h" :width="h.w" :height="h.h" fill="var(--bg)" />
-        <path :d="windows(h).join('')" :fill="phase === 'night' ? '#f2b25c' : 'none'" />
+        <path :d="windows(h).join('')" :fill="windowFill" />
+        <path v-if="weather === 'snow'" :d="cap(h)" fill="var(--surface)" />
       </g>
 
       <!-- Mosque: dome + minaret -->
@@ -182,8 +240,36 @@ function hatch(h: House, i: number) {
       <g v-for="(row, r) in rows.slice(1)" :key="'r' + r">
         <g v-for="(h, i) in row" :key="i">
           <rect :x="h.x" :y="h.base - h.h" :width="h.w" :height="h.h" fill="var(--bg)" />
-          <path :d="windows(h).join('')" :fill="phase === 'night' ? '#f2b25c' : 'none'" />
+          <path :d="windows(h).join('')" :fill="windowFill" />
           <path :d="hatch(h, i)" />
+          <path v-if="weather === 'snow'" :d="cap(h)" fill="var(--surface)" />
+        </g>
+      </g>
+
+      <!-- Snow: a chimney with curling smoke on one of the front houses -->
+      <g v-if="weather === 'snow'">
+        <rect x="314" y="166" width="7" height="10" fill="var(--bg)" />
+        <path class="mardin-sky__smoke" d="M317 162q-4-5 0-9q4-4 0-9" />
+        <path class="mardin-sky__smoke mardin-sky__smoke--late" d="M318 162q-4-5 0-9q4-4 0-9" />
+      </g>
+
+      <!-- Rain over the town: two layers of streaks falling at different speeds -->
+      <g v-if="weather === 'rain'" stroke-width="0.8">
+        <path class="mardin-sky__rain mardin-sky__rain--far" :d="rainFar" opacity="0.5" />
+        <path class="mardin-sky__rain" :d="rainNear" />
+      </g>
+
+      <!-- Snow over the town: big near flakes and small far ones, drifting sideways as they fall -->
+      <g v-if="weather === 'snow'" fill="currentColor" stroke="none">
+        <g class="mardin-sky__sway">
+          <g class="mardin-sky__snow mardin-sky__snow--far" opacity="0.6">
+            <circle v-for="([x, y], i) in snowFar" :key="'f' + i" :cx="x" :cy="y" r="0.9" />
+          </g>
+        </g>
+        <g class="mardin-sky__sway mardin-sky__sway--alt">
+          <g class="mardin-sky__snow">
+            <circle v-for="([x, y], i) in snowNear" :key="'n' + i" :cx="x" :cy="y" r="1.6" />
+          </g>
         </g>
       </g>
     </g>
@@ -203,8 +289,66 @@ function hatch(h: House, i: number) {
 .mardin-sketch--dusk {
   opacity: 0.4;
 }
-.mardin-sketch--night {
+.mardin-sketch--night,
+.mardin-sketch--overcast {
   opacity: 0.38;
+}
+/* Weather: clouds drift, rain and snow fall (one pattern period per loop), chimney smoke curls up. */
+.mardin-sky__clouds {
+  animation: cloud-drift 26s ease-in-out infinite alternate;
+}
+.mardin-sky__rain {
+  animation: rain-fall 0.55s linear infinite;
+}
+.mardin-sky__rain--far {
+  animation-duration: 0.8s;
+}
+@keyframes rain-fall {
+  to {
+    translate: -5px 24px;
+  }
+}
+.mardin-sky__snow {
+  animation: snow-fall 7s linear infinite;
+}
+.mardin-sky__snow--far {
+  animation-duration: 11s;
+}
+@keyframes snow-fall {
+  to {
+    translate: 0 30px;
+  }
+}
+.mardin-sky__sway {
+  animation: snow-sway 3.5s ease-in-out infinite alternate;
+}
+.mardin-sky__sway--alt {
+  animation-duration: 4.5s;
+  animation-direction: alternate-reverse;
+}
+@keyframes snow-sway {
+  from {
+    translate: -4px 0;
+  }
+  to {
+    translate: 4px 0;
+  }
+}
+.mardin-sky__smoke {
+  animation: smoke-rise 4s ease-out infinite;
+}
+.mardin-sky__smoke--late {
+  animation-delay: -2s;
+}
+@keyframes smoke-rise {
+  from {
+    translate: 0 0;
+    opacity: 0.9;
+  }
+  to {
+    translate: 3px -14px;
+    opacity: 0;
+  }
 }
 /* Day: the dashed sun outline turns slowly, clouds drift, birds fly across flapping their wings. */
 .mardin-sky__sun {
@@ -304,7 +448,12 @@ function hatch(h: House, i: number) {
   .mardin-sky__sun,
   .mardin-sky__cloud,
   .mardin-sky__bird,
-  .mardin-sky__wings {
+  .mardin-sky__wings,
+  .mardin-sky__clouds,
+  .mardin-sky__rain,
+  .mardin-sky__snow,
+  .mardin-sky__sway,
+  .mardin-sky__smoke {
     animation: none;
   }
 }

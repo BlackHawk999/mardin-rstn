@@ -1,4 +1,6 @@
-import { onBeforeUnmount, ref, watchEffect, type Ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watchEffect, type Ref } from 'vue';
+import type { WeatherCondition } from '@rt/shared';
+import { api } from '@/api/client';
 
 export type SkyPhase = 'dawn' | 'day' | 'dusk' | 'night';
 
@@ -61,4 +63,23 @@ export function useSkyPhase(coords: Ref<{ lat: number | null; lng: number | null
   const timer = window.setInterval(update, 60_000);
   onBeforeUnmount(() => window.clearInterval(timer));
   return phase;
+}
+
+/** Current weather at the restaurant (server caches it for 15 min), refreshed every 15 min. `?weather=rain` forces it in dev. */
+export function useWeather() {
+  const condition = ref<WeatherCondition>('clear');
+  const forced = import.meta.env.DEV ? (new URLSearchParams(location.search).get('weather') as WeatherCondition | null) : null;
+
+  const load = async () => {
+    if (forced) return void (condition.value = forced);
+    try {
+      condition.value = (await api.weather()).condition;
+    } catch {
+      // decoration only: keep the last value
+    }
+  };
+  onMounted(load);
+  const timer = window.setInterval(load, 15 * 60_000);
+  onBeforeUnmount(() => window.clearInterval(timer));
+  return condition;
 }

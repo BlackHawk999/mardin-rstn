@@ -1,4 +1,4 @@
-import type { AddressDto, CatalogDto, CreateOrderInput, OrderDto, UserDto } from '@rt/shared';
+import type { AddressDto, CatalogDto, CreateOrderInput, OrderDto, UserDto, WeatherDto } from '@rt/shared';
 import { getInitData, isInTelegram } from '@/telegram';
 
 // Empty VITE_API_URL = same origin (Vite dev proxy or a reverse proxy in production).
@@ -44,6 +44,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   catalog: () => request<CatalogDto>('GET', '/catalog'),
+  weather: () => request<WeatherDto>('GET', '/weather'),
   recommendations: (dishIds: number[]) =>
     request<{ ids: number[]; togetherCount: number }>('GET', `/recommendations?ids=${dishIds.join(',')}`),
 

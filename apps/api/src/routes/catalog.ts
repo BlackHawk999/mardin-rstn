@@ -1,10 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import type { CatalogDto } from '@rt/shared';
+import type { CatalogDto, WeatherDto } from '@rt/shared';
 import { prisma } from '../db.js';
 import { toBannerDto, toCategoryDto, toDishDto } from '../dto.js';
 import { getSettings, isOpenNow } from '../services/settings.js';
 import { getRecommendations } from '../services/recommendations.js';
+import { getWeather } from '../services/weather.js';
 
 /** Public: the whole menu in one request. The mini app loads it once and caches it. */
 export async function catalogRoutes(app: FastifyInstance) {
@@ -23,6 +24,9 @@ export async function catalogRoutes(app: FastifyInstance) {
       isOpen: isOpenNow(settings),
     };
   });
+
+  /** Public: current weather at the restaurant (decorative sky in the mini app). */
+  app.get('/weather', async (): Promise<WeatherDto> => getWeather());
 
   /** Cart upsell: GET /recommendations?ids=1,2,3 → { ids, togetherCount } */
   app.get('/recommendations', async (req) => {

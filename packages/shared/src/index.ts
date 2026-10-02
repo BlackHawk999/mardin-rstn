@@ -97,6 +97,12 @@ export interface SettingsDto {
   cartSuggestCategoryIds: number[];
 }
 
+/** Current weather at the restaurant, simplified for the decorative sky on the profile page. */
+export type WeatherCondition = 'clear' | 'clouds' | 'rain' | 'snow';
+export interface WeatherDto {
+  condition: WeatherCondition;
+}
+
 export interface CatalogDto {
   categories: CategoryDto[];
   dishes: DishDto[];
