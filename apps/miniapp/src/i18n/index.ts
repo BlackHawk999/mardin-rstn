@@ -96,8 +96,7 @@ export const messages = {
     map: {
       deliveryAddress: 'Адрес доставки',
       locating: 'Определяем адрес…',
-      confirm: 'Подтвердить точку',
-      changePoint: 'Изменить точку',
+      findingYou: 'Ищем вас на карте…',
       noKeyTitle: 'Карта не настроена',
       noKeyHint: 'Добавьте ключ Яндекс.Карт в VITE_YANDEX_MAPS_KEY. Пока адрес можно ввести вручную.',
       enterManually: 'Ввести адрес вручную',
@@ -109,6 +108,7 @@ export const messages = {
       label: 'Название (Дом, Работа)',
       text: 'Улица, дом, квартира',
       comment: 'Подъезд, этаж, домофон',
+      save: 'Сохранить адрес',
       default: 'Основной',
     },
     orders: {
@@ -241,8 +241,7 @@ export const messages = {
     map: {
       deliveryAddress: 'Yetkazib berish manzili',
       locating: 'Manzil aniqlanmoqda…',
-      confirm: 'Nuqtani tasdiqlash',
-      changePoint: "Nuqtani o'zgartirish",
+      findingYou: 'Joylashuvingiz aniqlanmoqda…',
       noKeyTitle: 'Xarita sozlanmagan',
       noKeyHint: "VITE_YANDEX_MAPS_KEY ga Yandex Xaritalar kalitini qo'shing. Hozircha manzilni qo'lda kiriting.",
       enterManually: "Manzilni qo'lda kiritish",
@@ -254,6 +253,7 @@ export const messages = {
       label: 'Nomi (Uy, Ish joyi)',
       text: "Ko'cha, uy, xonadon",
       comment: 'Podyezd, qavat, domofon',
+      save: 'Manzilni saqlash',
       default: 'Asosiy',
     },
     orders: {
