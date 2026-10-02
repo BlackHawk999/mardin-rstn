@@ -1,12 +1,12 @@
 <script setup lang="ts">
-/** End of the menu list: an eight-pointed Seljuk star between two rules and "Afiyet olsun!" (Turkish "bon appétit"). */
+/** End of the menu list: a slowly turning eight-pointed Seljuk star between two rules and "Afiyet olsun!" (Turkish "bon appétit"). */
 </script>
 
 <template>
   <div class="menu-end" aria-hidden="true">
     <div class="flex items-center gap-3">
       <span class="menu-end__rule" />
-      <svg viewBox="0 0 24 24" class="text-accent h-6 w-6">
+      <svg viewBox="0 0 24 24" class="menu-end__star text-accent h-6 w-6">
         <g fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round">
           <rect x="6" y="6" width="12" height="12" />
           <rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" />
@@ -35,5 +35,19 @@
 }
 .menu-end__rule--right {
   transform: scaleX(-1);
+}
+/* The Seljuk star turns slowly, one full turn per 24 s. */
+.menu-end__star {
+  animation: star-turn 24s linear infinite;
+}
+@keyframes star-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-end__star {
+    animation: none;
+  }
 }
 </style>
