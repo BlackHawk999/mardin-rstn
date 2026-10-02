@@ -8,6 +8,7 @@ import { api } from '@/api/client';
 import { useCartStore } from '@/stores/cart';
 import { useCatalogStore } from '@/stores/catalog';
 import { getLocation, haptic, hideBackButton, showBackButton } from '@/telegram';
+import { loadYmaps } from '@/utils/ymaps';
 import AppIcon from '@/components/AppIcon.vue';
 
 const { locale } = useI18n();
@@ -16,6 +17,13 @@ const cart = useCartStore();
 const catalog = useCatalogStore();
 
 const hasKey = Boolean(import.meta.env.VITE_YANDEX_MAPS_KEY);
+/** The map renders only once the API is really loaded; on failure the user gets a retry button instead of a blank screen. */
+const mapState = ref<'loading' | 'ready' | 'failed'>('loading');
+
+async function loadMap() {
+  mapState.value = 'loading';
+  mapState.value = (await loadYmaps()) ? 'ready' : 'failed';
+}
 
 const map = shallowRef<YMap | null>(null);
 // Yandex Maps JS API v3 uses [lng, lat]
@@ -102,6 +110,7 @@ function goBack() {
 // A new delivery address starts where the user is; the restaurant is only the fallback when location is unavailable.
 onMounted(async () => {
   showBackButton(goBack);
+  if (hasKey) loadMap();
   await catalog.load();
   if (await locateMe(false)) return;
   center.value = [catalog.settings?.restaurantLng ?? 69.2401, catalog.settings?.restaurantLat ?? 41.3111];
@@ -118,7 +127,7 @@ onBeforeUnmount(() => {
   <div class="fixed inset-0 flex flex-col">
     <!-- Map -->
     <div class="relative flex-1 bg-surface-2">
-      <template v-if="hasKey">
+      <template v-if="hasKey && mapState === 'ready'">
         <YandexMap v-model="map" :settings="{ location: { center, zoom }, showScaleInCopyrights: true }" height="100%" width="100%">
           <YandexMapDefaultSchemeLayer />
           <YandexMapDefaultFeaturesLayer />
@@ -136,6 +145,18 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </template>
+
+      <div v-else-if="hasKey && mapState === 'loading'" class="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
+        <AppIcon name="map" :size="36" class="text-muted animate-pulse" />
+        <p class="text-muted text-[13px]">{{ $t('map.loadingMap') }}</p>
+      </div>
+
+      <div v-else-if="hasKey" class="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
+        <AppIcon name="map" :size="36" class="text-muted" />
+        <p class="text-[14px] font-semibold">{{ $t('map.loadFailed') }}</p>
+        <p class="text-muted text-[12px]">{{ $t('map.loadFailedHint') }}</p>
+        <button type="button" class="btn btn-sm mt-2" @click="loadMap">{{ $t('common.retry') }}</button>
+      </div>
 
       <div v-else class="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
         <AppIcon name="pin" :size="36" class="text-muted" />
