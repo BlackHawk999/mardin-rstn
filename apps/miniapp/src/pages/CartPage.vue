@@ -13,6 +13,7 @@ import AppIcon from '@/components/AppIcon.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import QuantityStepper from '@/components/QuantityStepper.vue';
 import EmptyState from '@/components/EmptyState.vue';
+import EmptyCartSketch from '@/components/EmptyCartSketch.vue';
 import CartSuggestions from '@/components/CartSuggestions.vue';
 
 const { t } = useI18n();
@@ -105,7 +106,9 @@ onActivated(loadAddresses);
   <div class="page" :class="{ 'page--bar': cart.items.length > 0 }">
     <PageHeader :title="$t('cart.title')" />
 
-    <EmptyState v-if="cart.items.length === 0" icon="🛒" :text="$t('cart.empty')" :action-label="$t('cart.goToMenu')" @action="router.push({ name: 'menu' })" />
+    <EmptyState v-if="cart.items.length === 0" :text="$t('cart.empty')" :action-label="$t('cart.goToMenu')" @action="router.push({ name: 'menu' })">
+      <template #art><EmptyCartSketch /></template>
+    </EmptyState>
 
     <div v-else class="space-y-3">
       <div v-if="!catalog.isOpen" class="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-medium text-amber-900">{{ $t('cart.closed') }}</div>

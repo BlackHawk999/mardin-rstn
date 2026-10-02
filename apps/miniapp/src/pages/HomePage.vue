@@ -6,6 +6,7 @@ import { useCatalogStore } from '@/stores/catalog';
 import { tr } from '@/utils/format';
 import AppIcon from '@/components/AppIcon.vue';
 import CategoryChips from '@/components/CategoryChips.vue';
+import LanternGarland from '@/components/LanternGarland.vue';
 import StickyTop from '@/components/StickyTop.vue';
 import { useKeepScroll } from '@/composables/useKeepScroll';
 import DishCard from '@/components/DishCard.vue';
@@ -46,6 +47,8 @@ const featured = computed(() => {
   <div class="page space-y-4">
     <!-- Logo, search and category filters stay pinned while scrolling -->
     <StickyTop>
+      <!-- Lantern garland across the top, behind the logo (z -1 inside the sticky header's stacking context) -->
+      <div class="home-lanterns" aria-hidden="true"><LanternGarland /></div>
       <header class="mb-2 flex h-12 items-center">
         <div class="w-10" />
         <div class="flex-1 text-center leading-none">

@@ -468,3 +468,14 @@ textarea.input {
     animation: none;
   }
 }
+
+/* Home: lantern garland hanging from the top edge of the sticky header. */
+.home-lanterns {
+  position: absolute;
+  z-index: -1;
+  top: var(--safe-top);
+  left: 0;
+  right: 0;
+  height: 72px;
+  pointer-events: none;
+}
