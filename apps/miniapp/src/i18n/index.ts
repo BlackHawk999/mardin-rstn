@@ -74,6 +74,7 @@ export const messages = {
       noAddressYet: 'У вас ещё нет сохранённых адресов. Добавьте адрес, чтобы оформить доставку.',
       removePickupOnly: 'Убрать из заказа',
     },
+    menuEnd: { bonAppetit: 'Приятного аппетита' },
     favorites: { title: 'Избранное', empty: 'Пока ничего нет. Нажмите ♥ на блюде, чтобы сохранить его' },
     profile: {
       title: 'Профиль',
@@ -218,6 +219,7 @@ export const messages = {
       noAddressYet: 'Sizda hali saqlangan manzil yo‘q. Yetkazib berish uchun manzil qo‘shing.',
       removePickupOnly: 'Buyurtmadan olib tashlash',
     },
+    menuEnd: { bonAppetit: 'Yoqimli ishtaha' },
     favorites: { title: 'Sevimlilar', empty: "Hozircha bo'sh. Taomni saqlash uchun ♥ bosing" },
     profile: {
       title: 'Profil',

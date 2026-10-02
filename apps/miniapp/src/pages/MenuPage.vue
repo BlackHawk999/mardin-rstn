@@ -5,6 +5,8 @@ import { useCatalogStore } from '@/stores/catalog';
 import { name } from '@/utils/format';
 import AppIcon from '@/components/AppIcon.vue';
 import CategoryChips from '@/components/CategoryChips.vue';
+import SpiceBazaar from '@/components/SpiceBazaar.vue';
+import MenuEndOrnament from '@/components/MenuEndOrnament.vue';
 import DishRow from '@/components/DishRow.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StickyTop from '@/components/StickyTop.vue';
@@ -56,6 +58,8 @@ const sections = computed(() => {
   <div class="page">
     <!-- Title, search and category filters stay pinned while scrolling -->
     <StickyTop>
+      <!-- Spice bazaar sketch between the title and the search button (z -1 inside the sticky header) -->
+      <div class="menu-spices" aria-hidden="true"><SpiceBazaar /></div>
       <PageHeader :title="$t('nav.menu')" class="!mb-2">
         <template #right>
           <RouterLink :to="{ name: 'search' }" class="icon-btn"><AppIcon name="search" :size="20" /></RouterLink>
@@ -72,5 +76,7 @@ const sections = computed(() => {
         <DishRow v-for="d in s.dishes" :key="d.id" :dish="d" />
       </div>
     </section>
+
+    <MenuEndOrnament v-if="sections.length" />
   </div>
 </template>

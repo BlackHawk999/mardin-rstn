@@ -479,3 +479,14 @@ textarea.input {
   height: 72px;
   pointer-events: none;
 }
+
+/* Menu: spice bazaar sketch in the sticky header, between the title and the search button. */
+.menu-spices {
+  position: absolute;
+  z-index: -1;
+  top: calc(var(--safe-top) + 6px);
+  right: 64px;
+  width: min(220px, calc(100% - 170px));
+  height: 52px;
+  pointer-events: none;
+}
