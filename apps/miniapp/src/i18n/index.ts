@@ -87,6 +87,10 @@ export const messages = {
       addresses: 'Мои адреса',
       help: 'Помощь и поддержка',
       saved: 'Сохранено',
+      openUntil: 'Открыто до {time}',
+      closedUntil: 'Закрыто · откроется в {time}',
+      hours: 'Ежедневно {open}–{close}',
+      call: 'Позвонить',
     },
     map: {
       deliveryAddress: 'Адрес доставки',
@@ -227,6 +231,10 @@ export const messages = {
       addresses: 'Manzillarim',
       help: "Yordam va qo'llab-quvvatlash",
       saved: 'Saqlandi',
+      openUntil: '{time} gacha ochiq',
+      closedUntil: 'Yopiq · {time} da ochiladi',
+      hours: 'Har kuni {open}–{close}',
+      call: "Qo'ng'iroq qilish",
     },
     map: {
       deliveryAddress: 'Yetkazib berish manzili',

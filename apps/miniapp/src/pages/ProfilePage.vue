@@ -2,10 +2,11 @@
 import { computed, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useCatalogStore } from '@/stores/catalog';
-import { getTelegramPhotoUrl, haptic, openTelegramLink } from '@/telegram';
+import { getTelegramPhotoUrl, haptic, openExternalLink, openTelegramLink } from '@/telegram';
 import AppIcon from '@/components/AppIcon.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import MardinSketch from '@/components/MardinSketch.vue';
+import DishesSketch from '@/components/DishesSketch.vue';
 
 const auth = useAuthStore();
 const catalog = useCatalogStore();
@@ -41,6 +42,16 @@ const DEVELOPER_TELEGRAM = 'https://t.me/+998886480700';
 function openDeveloper() {
   haptic.selection();
   openTelegramLink(DEVELOPER_TELEGRAM);
+}
+
+const settings = computed(() => catalog.settings);
+const phoneHref = computed(() => `tel:${settings.value?.restaurantPhone.replace(/[^\d+]/g, '') ?? ''}`);
+
+function openMap() {
+  const s = settings.value;
+  if (s?.restaurantLat == null || s.restaurantLng == null) return;
+  haptic.selection();
+  openExternalLink(`https://yandex.uz/maps/?pt=${s.restaurantLng},${s.restaurantLat}&z=17&l=map`);
 }
 
 function support() {
@@ -109,8 +120,35 @@ function support() {
       </button>
     </section>
 
+    <!-- Restaurant: live status, address, phone -->
+    <section v-if="settings" class="card px-4 pt-3.5 pb-1">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-[15px] font-bold">{{ settings.restaurantName }}</p>
+        <span class="status-chip" :class="catalog.isOpen ? 'status-chip--open' : 'status-chip--closed'">
+          <i class="status-chip__dot" />
+          {{ catalog.isOpen ? $t('profile.openUntil', { time: settings.closeTime }) : $t('profile.closedUntil', { time: settings.openTime }) }}
+        </span>
+      </div>
+      <p class="text-muted mt-0.5 text-[12.5px]">{{ $t('profile.hours', { open: settings.openTime, close: settings.closeTime }) }}</p>
+      <div class="mt-3 divide-y divide-dashed divide-black/10 border-t border-dashed border-black/10">
+        <button v-if="settings.restaurantAddress" type="button" class="flex w-full items-center gap-3 py-3 text-left" @click="openMap">
+          <AppIcon name="pin" :size="18" class="text-accent flex-shrink-0" />
+          <span class="flex-1 text-[13px] leading-snug">{{ settings.restaurantAddress }}</span>
+          <AppIcon name="chevron" :size="16" class="text-muted" />
+        </button>
+        <a v-if="settings.restaurantPhone" :href="phoneHref" class="flex items-center gap-3 py-3">
+          <AppIcon name="phone" :size="18" class="text-accent flex-shrink-0" />
+          <span class="flex-1 text-[13px]">{{ settings.restaurantPhone }}</span>
+          <span class="text-accent text-[12.5px] font-semibold">{{ $t('profile.call') }}</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Still life sketch, continues the old-town drawing at the top -->
+    <DishesSketch class="pt-4" />
+
     <!-- Credit -->
-    <footer class="text-muted pt-6 pb-2 text-center text-[12px] leading-relaxed">
+    <footer class="text-muted pt-1 pb-2 text-center text-[12px] leading-relaxed">
       <p>
         Made with <span class="text-accent inline-block animate-[heartbeat_1.6s_ease-in-out_infinite]" aria-label="love">♥</span> by
         <a :href="DEVELOPER_TELEGRAM" class="credit-link" @click.prevent="openDeveloper">Elyor</a>

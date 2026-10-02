@@ -81,6 +81,12 @@ export function openTelegramLink(url: string) {
   else window.open(url, '_blank');
 }
 
+/** Regular web links (maps etc.): Telegram opens them in its in-app browser instead of replacing the mini app. */
+export function openExternalLink(url: string) {
+  if (tg?.openLink) tg.openLink(url);
+  else window.open(url, '_blank');
+}
+
 // ---- Main button ----
 let mainButtonHandler: (() => void) | null = null;
 
