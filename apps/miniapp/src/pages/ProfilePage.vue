@@ -5,6 +5,7 @@ import { useCatalogStore } from '@/stores/catalog';
 import { getTelegramPhotoUrl, haptic, openTelegramLink } from '@/telegram';
 import AppIcon from '@/components/AppIcon.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import MardinSketch from '@/components/MardinSketch.vue';
 
 const auth = useAuthStore();
 const catalog = useCatalogStore();
@@ -36,6 +37,12 @@ function toggleLanguage() {
   auth.setLanguage(auth.user?.language === 'uz' ? 'ru' : 'uz');
 }
 
+const DEVELOPER_TELEGRAM = 'https://t.me/+998886480700';
+function openDeveloper() {
+  haptic.selection();
+  openTelegramLink(DEVELOPER_TELEGRAM);
+}
+
 function support() {
   const phone = catalog.settings?.restaurantPhone?.replace(/\D/g, '');
   if (phone) openTelegramLink(`https://t.me/+${phone}`);
@@ -43,7 +50,10 @@ function support() {
 </script>
 
 <template>
-  <div class="page space-y-4">
+  <div class="page relative isolate space-y-4">
+    <!-- Decorative old-town sketch behind the header -->
+    <div class="profile-sketch" aria-hidden="true"><MardinSketch /></div>
+
     <PageHeader :title="$t('profile.title')" />
 
     <!-- Identity -->
@@ -103,7 +113,7 @@ function support() {
     <footer class="text-muted pt-6 pb-2 text-center text-[12px] leading-relaxed">
       <p>
         Made with <span class="text-accent inline-block animate-[heartbeat_1.6s_ease-in-out_infinite]" aria-label="love">♥</span> by
-        <span class="signature">Elyor</span>
+        <a :href="DEVELOPER_TELEGRAM" class="credit-link" @click.prevent="openDeveloper">Elyor</a>
       </p>
       <p class="mt-0.5 text-[11px] opacity-70">{{ catalog.settings?.restaurantName ?? 'Mardin' }} · v{{ appVersion }}</p>
     </footer>

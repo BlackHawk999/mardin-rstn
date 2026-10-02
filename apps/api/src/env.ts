@@ -1,6 +1,10 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+// Opening hours and "today" stats are wall-clock times of the restaurant, not of whatever machine runs the API
+// (the VPS is in Germany). Node picks up a TZ change at runtime. Override with TZ in .env if ever needed.
+process.env.TZ ||= 'Asia/Tashkent';
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   BOT_TOKEN: z.string().min(10, 'BOT_TOKEN is required'),
