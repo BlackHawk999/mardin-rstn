@@ -51,7 +51,9 @@ function openMap() {
   const s = settings.value;
   if (s?.restaurantLat == null || s.restaurantLng == null) return;
   haptic.selection();
-  openExternalLink(`https://yandex.uz/maps/?pt=${s.restaurantLng},${s.restaurantLat}&z=17&l=map`);
+  // whatshere opens the address card for the point (with the "Route" button), not just a bare pin.
+  const p = `${s.restaurantLng},${s.restaurantLat}`;
+  openExternalLink(`https://yandex.uz/maps/?ll=${p}&z=17&pt=${p}&whatshere%5Bpoint%5D=${p}&whatshere%5Bzoom%5D=17`);
 }
 
 function support() {
