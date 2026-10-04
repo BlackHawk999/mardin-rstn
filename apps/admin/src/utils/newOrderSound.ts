@@ -1,11 +1,11 @@
 /**
  * New-order alert for the admin panel: a two-note chime followed by a female voice saying «Новый заказ!»
- * (public/sounds/new-order.wav, recorded with the Windows "Irina" voice and normalized).
+ * (public/sounds/new-order.mp3: Microsoft neural voice "Svetlana", generated with edge-tts, slightly brisk, max volume).
  *
  * Browsers only allow sound after the page has had a user gesture, so the first click / key press on the page
  * unlocks audio; after that alerts play even when the tab is in the background.
  */
-const voice = new Audio(`${import.meta.env.BASE_URL}sounds/new-order.wav`);
+const voice = new Audio(`${import.meta.env.BASE_URL}sounds/new-order.mp3`);
 voice.preload = 'auto';
 voice.volume = 1;
 
