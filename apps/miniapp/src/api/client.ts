@@ -70,4 +70,6 @@ export const api = {
   createOrder: (data: CreateOrderInput) => request<OrderDto>('POST', '/orders', data),
   orders: () => request<OrderDto[]>('GET', '/orders'),
   order: (id: number) => request<OrderDto>('GET', `/orders/${id}`),
+  cancelOrder: (id: number, reason: 'changed_mind' | 'mistake' | 'too_long' | 'other') =>
+    request<OrderDto>('POST', `/orders/${id}/cancel`, { reason }),
 };

@@ -14,7 +14,9 @@ export class OrderError extends Error {
       | 'address_required'
       | 'min_order'
       | 'pickup_only'
-      | 'invalid_transition',
+      | 'invalid_transition'
+      | 'not_found'
+      | 'not_cancellable',
     public details?: unknown,
   ) {
     super(code);
@@ -129,14 +131,42 @@ export async function changeOrderStatus(orderId: number, next: OrderStatus, opts
   }
 
   const field = timestampField[next];
-  return prisma.order.update({
-    where: { id: orderId },
+  // Only applies if nobody changed the status meanwhile (e.g. the customer cancelling while staff press "accept").
+  const { count } = await prisma.order.updateMany({
+    where: { id: orderId, status: current },
     data: {
       status: next,
       ...(field ? { [field]: new Date() } : {}),
       ...(opts.courierId !== undefined ? { courierId: opts.courierId } : {}),
       ...(opts.cancelReason ? { cancelReason: opts.cancelReason } : {}),
     },
-    include: { items: true, user: true },
   });
+  if (count === 0) throw new OrderError('invalid_transition', { from: current, to: next });
+  return prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: { items: true, user: true } });
+}
+
+/** Reasons a customer can pick when cancelling; stored in Russian for the staff. */
+export const CUSTOMER_CANCEL_REASONS = {
+  changed_mind: 'Передумал',
+  mistake: 'Ошибся в заказе',
+  too_long: 'Долго ждать',
+  other: 'Другое',
+} as const;
+export type CustomerCancelReason = keyof typeof CUSTOMER_CANCEL_REASONS;
+
+/**
+ * The customer cancels their own order. Allowed only while it is still "new" (the restaurant has not accepted it);
+ * the check and the update are one statement, so it cannot slip past staff accepting at the same moment.
+ */
+export async function cancelOrderByCustomer(userId: number, orderId: number, reason: CustomerCancelReason) {
+  const { count } = await prisma.order.updateMany({
+    where: { id: orderId, userId, status: 'new' },
+    data: { status: 'cancelled', cancelledAt: new Date(), cancelReason: `Клиент: ${CUSTOMER_CANCEL_REASONS[reason]}` },
+  });
+  if (count === 0) {
+    const order = await prisma.order.findFirst({ where: { id: orderId, userId } });
+    if (!order) throw new OrderError('not_found');
+    throw new OrderError('not_cancellable', { status: order.status });
+  }
+  return prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: { items: true } });
 }

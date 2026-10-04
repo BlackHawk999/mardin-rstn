@@ -137,6 +137,15 @@ export const messages = {
       repeat: 'Повторить заказ',
       callRestaurant: 'Позвонить в ресторан',
       items: 'Состав заказа',
+      cancel: {
+        button: 'Отменить заказ',
+        title: 'Отменить заказ?',
+        reasonHint: 'Подскажите причину — так мы станем лучше',
+        reasons: { changed_mind: 'Передумал', mistake: 'Ошибся в заказе', too_long: 'Долго ждать', other: 'Другое' },
+        keep: 'Не отменять',
+        confirm: 'Да, отменить',
+        tooLate: 'Ресторан уже принял заказ, и отменить его здесь нельзя. Позвоните нам — поможем.',
+      },
     },
     errors: {
       closed: 'Ресторан сейчас закрыт',
@@ -285,6 +294,15 @@ export const messages = {
       repeat: 'Qayta buyurtma berish',
       callRestaurant: "Restoranga qo'ng'iroq",
       items: 'Buyurtma tarkibi',
+      cancel: {
+        button: 'Buyurtmani bekor qilish',
+        title: 'Buyurtmani bekor qilasizmi?',
+        reasonHint: 'Sababini ayting — shunda yanada yaxshilanamiz',
+        reasons: { changed_mind: 'Fikrimdan qaytdim', mistake: 'Buyurtmada xato', too_long: 'Kutish uzoq', other: 'Boshqa' },
+        keep: 'Bekor qilmaslik',
+        confirm: 'Ha, bekor qilish',
+        tooLate: "Restoran buyurtmani qabul qilib bo'lgan, uni bu yerda bekor qilib bo'lmaydi. Bizga qo'ng'iroq qiling — yordam beramiz.",
+      },
     },
     errors: {
       closed: 'Restoran hozir yopiq',

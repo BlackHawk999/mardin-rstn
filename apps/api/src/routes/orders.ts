@@ -2,8 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { toOrderDto } from '../dto.js';
-import { createOrder, OrderError } from '../services/orders.js';
-import { notifyNewOrder } from '../bot/notifications.js';
+import { cancelOrderByCustomer, CUSTOMER_CANCEL_REASONS, createOrder, OrderError, type CustomerCancelReason } from '../services/orders.js';
+import { notifyCancelledByCustomer, notifyNewOrder } from '../bot/notifications.js';
 
 const createOrderSchema = z.object({
   type: z.enum(['delivery', 'pickup']),
@@ -50,6 +50,23 @@ export async function orderRoutes(app: FastifyInstance) {
       take: 50,
     });
     return rows.map(toOrderDto);
+  });
+
+  /** The customer cancels their order; only while the restaurant has not accepted it yet (409 otherwise). */
+  app.post('/orders/:id/cancel', async (req, reply) => {
+    const id = Number((req.params as { id: string }).id);
+    const { reason } = z
+      .object({ reason: z.enum(Object.keys(CUSTOMER_CANCEL_REASONS) as [CustomerCancelReason, ...CustomerCancelReason[]]) })
+      .parse(req.body);
+    try {
+      const order = await cancelOrderByCustomer(req.user.id, id, reason);
+      notifyCancelledByCustomer(order.id, CUSTOMER_CANCEL_REASONS[reason]).catch((e) => app.log.error(e, 'notifyCancelledByCustomer failed'));
+      return toOrderDto(order);
+    } catch (e) {
+      if (e instanceof OrderError && e.code === 'not_found') return reply.code(404).send({ error: 'not_found' });
+      if (e instanceof OrderError) return reply.code(409).send({ error: e.code, details: e.details });
+      throw e;
+    }
   });
 
   app.get('/orders/:id', async (req, reply) => {

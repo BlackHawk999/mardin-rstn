@@ -135,6 +135,12 @@ body {
   color: var(--text);
   box-shadow: none;
 }
+/* Destructive action (cancel an order): solid red, no brand gradient. */
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--danger) 70%, transparent);
+}
 .btn-sm {
   height: 36px;
   padding: 0 14px;

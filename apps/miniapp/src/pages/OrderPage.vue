@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { OrderDto } from '@rt/shared';
 import { STATUS_FLOW } from '@rt/shared';
-import { api } from '@/api/client';
+import { api, ApiError } from '@/api/client';
 import { useCartStore } from '@/stores/cart';
 import { useCatalogStore } from '@/stores/catalog';
 import { formatDate, money, name } from '@/utils/format';
@@ -43,6 +43,41 @@ function repeat() {
   }
   haptic.success();
   router.push({ name: 'cart' });
+}
+
+// Self-cancel: only while the restaurant has not accepted the order (the server checks this too).
+const REASONS = ['changed_mind', 'mistake', 'too_long', 'other'] as const;
+const cancelOpen = ref(false);
+const cancelReason = ref<(typeof REASONS)[number]>('changed_mind');
+const cancelling = ref(false);
+const tooLate = ref(false);
+
+function openCancel() {
+  haptic.light();
+  tooLate.value = false;
+  cancelOpen.value = true;
+}
+
+async function confirmCancel() {
+  if (!order.value || cancelling.value) return;
+  cancelling.value = true;
+  try {
+    order.value = await api.cancelOrder(order.value.id, cancelReason.value);
+    cancelOpen.value = false;
+    haptic.success();
+    if (timer) window.clearInterval(timer);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 409) {
+      // The restaurant accepted it in the meantime: show the fresh status and suggest calling.
+      tooLate.value = true;
+      haptic.error();
+      await load();
+    } else {
+      throw e;
+    }
+  } finally {
+    cancelling.value = false;
+  }
 }
 
 function itemImage(dishId: number | null) {
@@ -125,11 +160,44 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
+      <!-- Cancel: confirmation with an optional reason -->
+      <section v-if="cancelOpen && order.status === 'new'" class="card space-y-3 p-4">
+        <div>
+          <h2 class="text-[16px] font-bold">{{ $t('order.cancel.title') }}</h2>
+          <p class="text-muted mt-0.5 text-[13px]">{{ $t('order.cancel.reasonHint') }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="r in REASONS"
+            :key="r"
+            type="button"
+            class="chip"
+            :class="{ 'chip--active': cancelReason === r }"
+            @click="haptic.selection(); cancelReason = r"
+          >
+            {{ $t(`order.cancel.reasons.${r}`) }}
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-ghost flex-1" @click="cancelOpen = false">{{ $t('order.cancel.keep') }}</button>
+          <button type="button" class="btn btn-danger flex-1" :disabled="cancelling" @click="confirmCancel">
+            {{ cancelling ? $t('common.loading') : $t('order.cancel.confirm') }}
+          </button>
+        </div>
+      </section>
+
+      <div v-if="tooLate" class="rounded-2xl bg-amber-100 px-4 py-3 text-[13px] font-medium text-amber-900">
+        {{ $t('order.cancel.tooLate') }}
+      </div>
+
       <div class="space-y-2 pt-1">
         <button type="button" class="btn w-full" @click="repeat">{{ $t('order.repeat') }}</button>
         <a v-if="catalog.settings?.restaurantPhone" :href="`tel:${catalog.settings.restaurantPhone}`" class="btn btn-ghost w-full">
           <AppIcon name="phone" :size="18" /> {{ $t('order.callRestaurant') }}
         </a>
+        <button v-if="order.status === 'new' && !cancelOpen" type="button" class="text-danger w-full py-2 text-[14px] font-semibold" @click="openCancel">
+          {{ $t('order.cancel.button') }}
+        </button>
       </div>
     </template>
   </div>
