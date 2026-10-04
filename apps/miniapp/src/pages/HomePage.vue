@@ -8,6 +8,7 @@ import AppIcon from '@/components/AppIcon.vue';
 import CategoryChips from '@/components/CategoryChips.vue';
 import LanternGarland from '@/components/LanternGarland.vue';
 import StickyTop from '@/components/StickyTop.vue';
+import { useIsDark } from '@/utils/sky';
 import { useKeepScroll } from '@/composables/useKeepScroll';
 import DishCard from '@/components/DishCard.vue';
 
@@ -17,6 +18,8 @@ useKeepScroll();
 
 const router = useRouter();
 const catalog = useCatalogStore();
+// Lanterns light up after the real sunset at the restaurant.
+const lanternsLit = useIsDark(computed(() => catalog.settings && { lat: catalog.settings.restaurantLat, lng: catalog.settings.restaurantLng }));
 
 const activeBanner = ref(0);
 const bannerEl = ref<HTMLElement | null>(null);
@@ -48,7 +51,7 @@ const featured = computed(() => {
     <!-- Logo, search and category filters stay pinned while scrolling -->
     <StickyTop>
       <!-- Lantern garland across the top, behind the logo (z -1 inside the sticky header's stacking context) -->
-      <div class="home-lanterns" aria-hidden="true"><LanternGarland /></div>
+      <div class="home-lanterns" aria-hidden="true"><LanternGarland :lit="lanternsLit" /></div>
       <header class="mb-2 flex h-12 items-center">
         <div class="w-10" />
         <div class="flex-1 text-center leading-none">

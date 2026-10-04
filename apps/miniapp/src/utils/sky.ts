@@ -65,6 +65,23 @@ export function useSkyPhase(coords: Ref<{ lat: number | null; lng: number | null
   return phase;
 }
 
+/** True from sunset to sunrise (lanterns on), re-checked every minute. `?sky=night|dusk` forces dark in dev, `?sky=day|dawn` light. */
+export function useIsDark(coords: Ref<{ lat: number | null; lng: number | null } | null | undefined>) {
+  const dark = ref(false);
+  const forced = import.meta.env.DEV ? (new URLSearchParams(location.search).get('sky') as SkyPhase | null) : null;
+
+  const update = () => {
+    if (forced) return void (dark.value = forced === 'night' || forced === 'dusk');
+    const sun = sunTimes(new Date(), coords.value?.lat ?? FALLBACK.lat, coords.value?.lng ?? FALLBACK.lng);
+    const t = Date.now();
+    dark.value = sun ? t > sun.sunset || t < sun.sunrise : false;
+  };
+  watchEffect(update);
+  const timer = window.setInterval(update, 60_000);
+  onBeforeUnmount(() => window.clearInterval(timer));
+  return dark;
+}
+
 /** Current weather at the restaurant (server caches it for 15 min), refreshed every 15 min. `?weather=rain` forces it in dev. */
 export function useWeather() {
   const condition = ref<WeatherCondition>('clear');
