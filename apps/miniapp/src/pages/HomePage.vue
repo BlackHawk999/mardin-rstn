@@ -81,14 +81,21 @@ const featured = computed(() => {
           @click="openBanner(b)"
         >
           <img :src="b.imageUrl" class="absolute inset-0 h-full w-full object-cover" alt="" />
-          <div class="absolute inset-0 bg-gradient-to-r from-[#2a1f18]/80 via-[#2a1f18]/35 to-transparent" />
-          <div class="absolute inset-0 flex flex-col justify-center gap-1.5 p-5 pr-[38%] text-white">
-            <p class="serif text-[19px] leading-tight font-bold">{{ tr(b.titleUz, b.titleRu) }}</p>
-            <p class="text-[12px] leading-snug text-white/85">{{ tr(b.subtitleUz, b.subtitleRu) }}</p>
-            <span class="mt-2 inline-flex h-8 w-fit items-center gap-1.5 rounded-full bg-white/90 px-3.5 text-[12px] font-semibold text-accent">
-              <AppIcon name="bag" :size="14" /> {{ $t('common.view') }}
+          <!-- Text sits on a frosted panel, so it stays readable over any artwork (even one with its own lettering);
+               the rest of the picture stays sharp. Banners without a title/subtitle show the picture alone. -->
+          <div v-if="tr(b.titleUz, b.titleRu) || tr(b.subtitleUz, b.subtitleRu)" class="banner-glass">
+            <p v-if="tr(b.titleUz, b.titleRu)" class="serif line-clamp-2 text-[16px] leading-tight font-bold">{{ tr(b.titleUz, b.titleRu) }}</p>
+            <p v-if="tr(b.subtitleUz, b.subtitleRu)" class="line-clamp-3 text-[11.5px] leading-snug text-white/90">{{ tr(b.subtitleUz, b.subtitleRu) }}</p>
+            <span class="text-accent mt-1 inline-flex h-7 w-fit items-center gap-1.5 rounded-full bg-white/95 px-3 text-[11.5px] font-semibold">
+              <AppIcon name="bag" :size="13" /> {{ $t('common.view') }}
             </span>
           </div>
+          <span
+            v-else
+            class="text-accent absolute bottom-3 left-3 inline-flex h-7 items-center gap-1.5 rounded-full bg-white/95 px-3 text-[11.5px] font-semibold shadow-md"
+          >
+            <AppIcon name="bag" :size="13" /> {{ $t('common.view') }}
+          </span>
         </button>
       </div>
       <div v-if="catalog.banners.length > 1" class="mt-2.5 flex justify-center gap-1.5">
