@@ -29,6 +29,7 @@ async function load() {
   categories.value = cats;
   dishes.value = list;
   menuDiscount.value = settings.menuDiscountPercent ?? 0;
+  menuDiscountDraft.value = menuDiscount.value;
 }
 
 // ---- Category editor ----
@@ -134,6 +135,44 @@ async function toggleDish(d: AdminDishDto, field: 'isAvailable' | 'isHit' | 'isN
   const updated = await api.updateDish(d.id, { [field]: !d[field] });
   dishes.value = dishes.value.map((x) => (x.id === d.id ? updated : x));
 }
+/**
+ * Discount cell in the table: empty = follow the menu-wide discount, 0 = never discounted, 1..90 = the dish's own.
+ * Saved as soon as the field is left (or Enter is pressed).
+ */
+const savingDiscount = ref<number | null>(null);
+
+// Menu-wide discount, editable here as well as in Settings. Changing it re-prices every dish that follows the menu.
+const menuDiscountDraft = ref<number | ''>('');
+const savingMenuDiscount = ref(false);
+async function saveMenuDiscount() {
+  const value = Math.min(90, Math.max(0, Math.round(Number(menuDiscountDraft.value) || 0)));
+  savingMenuDiscount.value = true;
+  try {
+    await api.saveSettings({ menuDiscountPercent: value });
+    await load();
+  } finally {
+    savingMenuDiscount.value = false;
+  }
+}
+async function saveDishDiscount(d: AdminDishDto, raw: string) {
+  const text = raw.trim();
+  const value = text === '' ? null : Math.min(90, Math.max(0, Math.round(Number(text))));
+  if (value !== null && Number.isNaN(value)) return;
+  if (value === d.discountPercent) return;
+  savingDiscount.value = d.id;
+  try {
+    const updated = await api.updateDish(d.id, { discountPercent: value });
+    dishes.value = dishes.value.map((x) => (x.id === d.id ? updated : x));
+  } finally {
+    savingDiscount.value = null;
+  }
+}
+function discountHint(d: AdminDishDto) {
+  if (d.discountPercent === 0) return 'без скидки';
+  if (d.discountPercent == null) return menuDiscount.value ? 'как у меню' : '';
+  return 'своя';
+}
+
 async function deleteDish(d: AdminDishDto) {
   if (!confirm(`Удалить блюдо «${d.nameRu}»? В старых заказах оно останется.`)) return;
   await api.deleteDish(d.id);
@@ -196,10 +235,20 @@ onMounted(load);
         </div>
       </div>
 
+      <div class="card flex flex-wrap items-center gap-3 px-4 py-3 text-[13px]">
+        <span class="font-semibold">Скидка на всё меню</span>
+        <input v-model.number="menuDiscountDraft" type="number" min="0" max="90" step="1" class="input !h-8 !w-20 text-center" @keyup.enter="saveMenuDiscount" />
+        <span>%</span>
+        <button type="button" class="btn btn-sm" :disabled="savingMenuDiscount || Number(menuDiscountDraft) === menuDiscount" @click="saveMenuDiscount">Применить</button>
+        <span class="text-muted text-xs">
+          Своя скидка блюда — в колонке «Скидка, %» (она важнее общей). Пусто — как у всего меню, 0 — блюдо без скидки.
+        </span>
+      </div>
+
       <div class="card overflow-x-auto">
         <table class="table">
           <thead>
-            <tr><th></th><th>Блюдо</th><th>Категория</th><th>Цена</th><th>В наличии</th><th>Хит</th><th>Новинка</th><th>Только самовывоз</th><th>Скрыто</th><th></th></tr>
+            <tr><th></th><th>Блюдо</th><th>Категория</th><th>Цена</th><th>Скидка, %</th><th>В наличии</th><th>Хит</th><th>Новинка</th><th>Только самовывоз</th><th>Скрыто</th><th></th></tr>
           </thead>
           <tbody>
             <tr v-for="(d, i) in visibleDishes" :key="d.id" :class="{ 'opacity-50': d.isHidden }">
@@ -213,6 +262,23 @@ onMounted(load);
                   <span class="bg-sale ml-1 rounded px-1 py-px text-[10px] font-bold text-white">−{{ d.effectiveDiscountPercent }}%</span>
                 </template>
                 <span v-else class="font-semibold">{{ money(d.price) }}</span>
+              </td>
+              <td class="whitespace-nowrap">
+                <input
+                  :key="`${d.id}-${d.discountPercent}`"
+                  type="number"
+                  min="0"
+                  max="90"
+                  step="1"
+                  class="input !h-8 !w-16 !px-2 text-center text-[13px]"
+                  :class="{ 'opacity-50': savingDiscount === d.id }"
+                  :value="d.discountPercent ?? ''"
+                  :placeholder="menuDiscount ? String(menuDiscount) : '—'"
+                  :title="'Пусто — как у всего меню, 0 — без скидки'"
+                  @change="saveDishDiscount(d, ($event.target as HTMLInputElement).value)"
+                  @keyup.enter="($event.target as HTMLInputElement).blur()"
+                />
+                <span class="text-muted block text-[10px]">{{ discountHint(d) }}</span>
               </td>
               <td><Toggle :model-value="d.isAvailable" @update:model-value="toggleDish(d, 'isAvailable')" /></td>
               <td><Toggle :model-value="d.isHit" @update:model-value="toggleDish(d, 'isHit')" /></td>
