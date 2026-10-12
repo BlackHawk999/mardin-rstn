@@ -14,6 +14,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import QuantityStepper from '@/components/QuantityStepper.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import EmptyCartSketch from '@/components/EmptyCartSketch.vue';
+import PriceTag from '@/components/PriceTag.vue';
 import CartSuggestions from '@/components/CartSuggestions.vue';
 
 const { t } = useI18n();
@@ -128,7 +129,7 @@ onActivated(loadAddresses);
             <p class="line-clamp-1 text-[14px] font-semibold">{{ catalog.dishById.get(item.dishId) ? name(catalog.dishById.get(item.dishId)!) : '—' }}</p>
             <button type="button" class="text-muted -mt-0.5 -mr-1 p-1" @click="cart.remove(item.key)"><AppIcon name="trash" :size="18" /></button>
           </div>
-          <p class="text-accent text-[13px] font-bold">{{ money(catalog.dishById.get(item.dishId)?.price ?? 0) }}</p>
+          <PriceTag layout="inline" :price="catalog.dishById.get(item.dishId)?.price ?? 0" :base-price="catalog.dishById.get(item.dishId)?.basePrice ?? 0" />
           <span
             v-if="catalog.dishById.get(item.dishId)?.pickupOnly"
             class="mt-0.5 w-fit rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
@@ -225,7 +226,10 @@ onActivated(loadAddresses);
       <!-- Summary -->
       <section class="card space-y-1.5 p-4 text-[14px]">
         <h2 class="mb-2 text-[15px] font-bold">{{ $t('cart.summary') }}</h2>
-        <div class="flex justify-between"><span class="text-muted">{{ $t('cart.products', { n: cart.count }) }}</span><span>{{ money(cart.itemsTotal) }}</span></div>
+        <div class="flex justify-between"><span class="text-muted">{{ $t('cart.products', { n: cart.count }) }}</span><span>{{ money(cart.baseItemsTotal) }}</span></div>
+        <div v-if="cart.savings > 0" class="flex justify-between font-semibold" style="color: var(--sale)">
+          <span>{{ $t('cart.discount') }}</span><span class="whitespace-nowrap">−{{ money(cart.savings) }}</span>
+        </div>
         <div v-if="cart.type === 'delivery'" class="flex justify-between">
           <span class="text-muted">{{ $t('cart.deliveryFee') }}</span>
           <span>{{ cart.byTaxi ? $t('cart.deliveryByAddress') : money(cart.deliveryFee) }}</span>

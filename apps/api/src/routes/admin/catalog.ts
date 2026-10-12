@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../../db.js';
 import { toAdminBannerDto, toAdminCategoryDto, toAdminDishDto } from '../../adminDto.js';
+import { getSettings } from '../../services/settings.js';
 
 const idParam = (req: { params: unknown }) => Number((req.params as { id: string }).id);
 
@@ -23,6 +24,7 @@ const dishSchema = z.object({
   ingredientsRu: z.string().trim().max(500).nullable().optional(),
   imageUrl: z.string().trim().max(500).nullable().optional(),
   price: z.number().int().min(0),
+  discountPercent: z.number().int().min(0).max(90).nullable().optional(),
   weight: z.string().trim().max(40).nullable().optional(),
   isNew: z.boolean().optional(),
   isHit: z.boolean().optional(),
@@ -92,20 +94,21 @@ export async function adminCatalogRoutes(app: FastifyInstance) {
       },
       orderBy: [{ categoryId: 'asc' }, { sortOrder: 'asc' }, { id: 'asc' }],
     });
-    return rows.map(toAdminDishDto);
+    const { menuDiscountPercent } = await getSettings();
+    return rows.map((d) => toAdminDishDto(d, menuDiscountPercent));
   });
 
   app.post('/dishes', async (req, reply) => {
     const body = dishSchema.parse(req.body);
     const max = await prisma.dish.aggregate({ _max: { sortOrder: true }, where: { categoryId: body.categoryId } });
     const row = await prisma.dish.create({ data: { ...body, sortOrder: body.sortOrder ?? (max._max.sortOrder ?? 0) + 1 } });
-    return reply.code(201).send(toAdminDishDto(row));
+    return reply.code(201).send(toAdminDishDto(row, (await getSettings()).menuDiscountPercent));
   });
 
   app.patch('/dishes/:id', async (req) => {
     const body = dishSchema.partial().parse(req.body);
     const row = await prisma.dish.update({ where: { id: idParam(req) }, data: body });
-    return toAdminDishDto(row);
+    return toAdminDishDto(row, (await getSettings()).menuDiscountPercent);
   });
 
   app.delete('/dishes/:id', async (req) => {

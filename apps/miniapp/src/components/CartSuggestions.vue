@@ -3,9 +3,11 @@ import { computed, ref, watch } from 'vue';
 import { api } from '@/api/client';
 import { useCartStore } from '@/stores/cart';
 import { useCatalogStore } from '@/stores/catalog';
-import { money, name } from '@/utils/format';
+import { name } from '@/utils/format';
 import { haptic } from '@/telegram';
 import AppIcon from './AppIcon.vue';
+import PriceTag from './PriceTag.vue';
+import DiscountBadge from './DiscountBadge.vue';
 
 const MAX_SHOWN = 8;
 
@@ -64,6 +66,7 @@ function add(id: number) {
       >
         <div class="bg-surface-2 relative aspect-square w-full overflow-hidden rounded-[12px]">
           <img v-if="d.imageUrl" :src="d.imageUrl" :alt="name(d)" class="h-full w-full object-cover" loading="lazy" />
+          <DiscountBadge class="absolute top-1.5 left-1.5" :percent="d.discountPercent" />
           <button
             type="button"
             class="bg-accent absolute right-1.5 bottom-1.5 flex h-8 w-8 items-center justify-center rounded-full text-white shadow-md transition-transform active:scale-90"
@@ -74,7 +77,7 @@ function add(id: number) {
           </button>
         </div>
         <p class="mt-2 line-clamp-2 text-[12px] leading-tight font-semibold">{{ name(d) }}</p>
-        <p class="text-accent mt-auto pt-1 text-[12px] font-bold">{{ money(d.price) }}</p>
+        <PriceTag class="mt-auto pt-1" size="sm" :price="d.price" :base-price="d.basePrice" />
       </RouterLink>
     </TransitionGroup>
   </section>

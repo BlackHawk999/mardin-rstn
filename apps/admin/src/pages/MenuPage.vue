@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import type { AdminCategoryDto, AdminDishDto } from '@rt/shared';
 import { api, ApiError, type CategoryInput, type DishInput } from '@/api/client';
 import { money } from '@/utils/format';
+import { discountedPrice, effectiveDiscountPercent } from '@rt/shared';
 import ImageUpload from '@/components/ImageUpload.vue';
 import Modal from '@/components/Modal.vue';
 import Toggle from '@/components/Toggle.vue';
@@ -20,8 +21,14 @@ const visibleDishes = computed(() =>
   }),
 );
 
+// Menu-wide discount (settings), shown in the dish editor's preview.
+const menuDiscount = ref(0);
+
 async function load() {
-  [categories.value, dishes.value] = await Promise.all([api.categories(), api.dishes()]);
+  const [cats, list, settings] = await Promise.all([api.categories(), api.dishes(), api.settings()]);
+  categories.value = cats;
+  dishes.value = list;
+  menuDiscount.value = settings.menuDiscountPercent ?? 0;
 }
 
 // ---- Category editor ----
@@ -96,9 +103,24 @@ function openDish(d?: AdminDishDto) {
   dishError.value = '';
   dishOpen.value = true;
 }
+// Discount in the editor: follow the menu (null), never discounted (0), or the dish's own percent.
+type DiscountMode = 'menu' | 'none' | 'own';
+const discountMode = computed<DiscountMode>({
+  get: () => (dishForm.value.discountPercent == null ? 'menu' : dishForm.value.discountPercent === 0 ? 'none' : 'own'),
+  set: (mode) => {
+    dishForm.value.discountPercent = mode === 'menu' ? null : mode === 'none' ? 0 : dishForm.value.discountPercent || 10;
+  },
+});
+const dishPreview = computed(() => {
+  const price = Number(dishForm.value.price) || 0;
+  const percent = effectiveDiscountPercent(dishForm.value.discountPercent ?? null, menuDiscount.value);
+  return { percent, price: discountedPrice(price, percent), base: price };
+});
+
 async function saveDish() {
   const { id: _id, ...data } = dishForm.value as DishInput & { id?: number };
   data.price = Number(data.price);
+  if (data.discountPercent != null) data.discountPercent = Math.min(90, Math.max(0, Math.round(Number(data.discountPercent) || 0)));
   try {
     if (dishEditing.value === null) await api.createDish(data);
     else await api.updateDish(dishEditing.value, data);
@@ -184,7 +206,14 @@ onMounted(load);
               <td class="w-14"><div class="bg-surface-2 h-11 w-11 overflow-hidden rounded-lg"><img v-if="d.imageUrl" :src="d.imageUrl" class="h-full w-full object-cover" alt="" /></div></td>
               <td><span class="font-medium">{{ d.nameRu }}</span><span class="text-muted block text-xs">{{ d.nameUz }}<span v-if="d.weight"> · {{ d.weight }}</span></span></td>
               <td class="text-xs">{{ catName(d.categoryId) }}</td>
-              <td class="font-semibold whitespace-nowrap">{{ money(d.price) }}</td>
+              <td class="whitespace-nowrap">
+                <template v-if="d.effectiveDiscountPercent > 0">
+                  <span class="text-sale font-semibold">{{ money(discountedPrice(d.price, d.effectiveDiscountPercent)) }}</span>
+                  <span class="text-muted ml-1 text-xs line-through">{{ money(d.price) }}</span>
+                  <span class="bg-sale ml-1 rounded px-1 py-px text-[10px] font-bold text-white">−{{ d.effectiveDiscountPercent }}%</span>
+                </template>
+                <span v-else class="font-semibold">{{ money(d.price) }}</span>
+              </td>
               <td><Toggle :model-value="d.isAvailable" @update:model-value="toggleDish(d, 'isAvailable')" /></td>
               <td><Toggle :model-value="d.isHit" @update:model-value="toggleDish(d, 'isHit')" /></td>
               <td><Toggle :model-value="d.isNew" @update:model-value="toggleDish(d, 'isNew')" /></td>
@@ -235,6 +264,29 @@ onMounted(load);
             </div>
             <div><label class="label">Цена, сум</label><input v-model.number="dishForm.price" type="number" min="0" step="1000" class="input" /></div>
             <div><label class="label">Вес / объём</label><input v-model="dishForm.weight" class="input" placeholder="300 г" /></div>
+          </div>
+          <div class="bg-surface-2 rounded-xl p-3">
+            <div class="grid items-end gap-3 sm:grid-cols-3">
+              <div class="sm:col-span-2">
+                <label class="label">Скидка</label>
+                <select v-model="discountMode" class="select">
+                  <option value="menu">Как у всего меню{{ menuDiscount ? ` (сейчас ${menuDiscount}%)` : ' (сейчас без скидки)' }}</option>
+                  <option value="own">Своя скидка</option>
+                  <option value="none">Без скидки (не участвует в акциях)</option>
+                </select>
+              </div>
+              <div v-if="discountMode === 'own'">
+                <label class="label">Скидка, %</label>
+                <input v-model.number="dishForm.discountPercent" type="number" min="1" max="90" step="1" class="input" />
+              </div>
+            </div>
+            <p class="mt-2 text-[13px]">
+              <template v-if="dishPreview.percent > 0 && dishPreview.price < dishPreview.base">
+                Клиент увидит: <b class="text-sale">{{ money(dishPreview.price) }}</b>
+                <span class="text-muted line-through">{{ money(dishPreview.base) }}</span> · −{{ dishPreview.percent }}%
+              </template>
+              <span v-else class="text-muted">Клиент увидит обычную цену: {{ money(dishPreview.base) }}</span>
+            </p>
           </div>
           <div class="grid gap-3 sm:grid-cols-2">
             <div><label class="label">Описание (рус)</label><textarea v-model="dishForm.descriptionRu" class="textarea" /></div>

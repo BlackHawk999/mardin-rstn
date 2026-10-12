@@ -26,6 +26,7 @@ async function save() {
       ...form.value,
       deliveryFee: Number(form.value.deliveryFee),
       minOrderAmount: Number(form.value.minOrderAmount),
+      menuDiscountPercent: Math.min(90, Math.max(0, Math.round(Number(form.value.menuDiscountPercent) || 0))),
       restaurantLat: form.value.restaurantLat === null || form.value.restaurantLat === ('' as unknown) ? null : Number(form.value.restaurantLat),
       restaurantLng: form.value.restaurantLng === null || form.value.restaurantLng === ('' as unknown) ? null : Number(form.value.restaurantLng),
     });
@@ -88,6 +89,14 @@ onMounted(async () => {
             <input v-model.number="form.deliveryFee" type="number" min="0" step="1000" class="input" :disabled="form.deliveryByTaxi" />
           </div>
           <div><label class="label">Минимальная сумма для доставки, сум</label><input v-model.number="form.minOrderAmount" type="number" min="0" step="1000" class="input" /></div>
+        </div>
+        <div>
+          <label class="label">Скидка на всё меню, %</label>
+          <input v-model.number="form.menuDiscountPercent" type="number" min="0" max="90" step="1" class="input max-w-[160px]" />
+          <p class="text-muted mt-1 text-xs">
+            0 — скидки нет. Действует на все блюда, кроме тех, где в карточке блюда выбрано «Своя скидка» или «Без скидки».
+            Цена со скидкой округляется вниз до 100 сум.
+          </p>
         </div>
         <Toggle v-model="form.deliveryByTaxi" label="Доставка через такси" />
         <p class="text-muted text-xs">

@@ -10,6 +10,7 @@
   --accent-2: #b3805f;
   --accent-soft: #f4ebe3;
   --danger: #d9534f;
+  --sale: #c4422b; /* discounted prices, same as the mini app */
   --success: #3e9c5b;
   --warning: #d28b2c;
   --info: #3b82c4;
@@ -25,6 +26,7 @@
   --color-accent-2: var(--accent-2);
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
+  --color-sale: var(--sale);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);

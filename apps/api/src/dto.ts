@@ -1,3 +1,4 @@
+import { discountedPrice, effectiveDiscountPercent } from '@rt/shared';
 import type { Address, Banner, Category, Dish, Order, OrderItem, User } from '@prisma/client';
 import type {
   AddressDto,
@@ -41,7 +42,11 @@ export const toCategoryDto = (c: Category): CategoryDto => ({
   sortOrder: c.sortOrder,
 });
 
-export const toDishDto = (d: Dish): DishDto => ({
+/** Catalog dish with its current price: `menuDiscountPercent` comes from settings. */
+export const toDishDto = (d: Dish, menuDiscountPercent: number): DishDto => {
+  const percent = effectiveDiscountPercent(d.discountPercent, menuDiscountPercent);
+  const price = discountedPrice(d.price, percent);
+  return {
   id: d.id,
   categoryId: d.categoryId,
   nameUz: d.nameUz,
@@ -51,14 +56,18 @@ export const toDishDto = (d: Dish): DishDto => ({
   ingredientsUz: d.ingredientsUz,
   ingredientsRu: d.ingredientsRu,
   imageUrl: d.imageUrl,
-  price: d.price,
+  price,
+  basePrice: d.price,
+  // Report 0 when rounding leaves the price unchanged, so the UI never shows "-1%" with no visible saving.
+  discountPercent: price < d.price ? percent : 0,
   weight: d.weight,
   isNew: d.isNew,
   isHit: d.isHit,
   isAvailable: d.isAvailable,
   pickupOnly: d.pickupOnly,
   sortOrder: d.sortOrder,
-});
+  };
+};
 
 export const toBannerDto = (b: Banner): BannerDto => ({
   id: b.id,
@@ -77,6 +86,7 @@ export const toOrderItemDto = (i: OrderItem): OrderItemDto => ({
   nameUz: i.nameUz,
   nameRu: i.nameRu,
   price: i.price,
+  basePrice: i.basePrice,
   quantity: i.quantity,
   comment: i.comment,
 });

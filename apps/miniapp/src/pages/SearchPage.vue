@@ -2,9 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCatalogStore } from '@/stores/catalog';
-import { money, name } from '@/utils/format';
+import { name } from '@/utils/format';
 import { haptic, hideBackButton, showBackButton } from '@/telegram';
 import AppIcon from '@/components/AppIcon.vue';
+import PriceTag from '@/components/PriceTag.vue';
 import DishRow from '@/components/DishRow.vue';
 import { canGoBack } from '@/composables/useKeepScroll';
 
@@ -115,7 +116,7 @@ onBeforeUnmount(hideBackButton);
             <img v-if="d.imageUrl" :src="d.imageUrl" class="h-14 w-14 rounded-[10px] object-cover" alt="" />
             <div class="min-w-0">
               <p class="line-clamp-1 text-[13px] font-semibold">{{ name(d) }}</p>
-              <p class="text-accent text-[12px] font-bold">{{ money(d.price) }}</p>
+              <PriceTag size="sm" :price="d.price" :base-price="d.basePrice" />
             </div>
           </RouterLink>
         </div>

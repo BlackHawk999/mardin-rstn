@@ -18,7 +18,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     ]);
     return {
       categories: categories.map(toCategoryDto),
-      dishes: dishes.map(toDishDto),
+      dishes: dishes.map((d) => toDishDto(d, settings.menuDiscountPercent)),
       banners: banners.map(toBannerDto),
       settings,
       isOpen: isOpenNow(settings),

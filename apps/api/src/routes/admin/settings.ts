@@ -16,6 +16,7 @@ const settingsSchema = z.object({
   deliveryFee: z.number().int().min(0),
   deliveryByTaxi: z.boolean(),
   minOrderAmount: z.number().int().min(0),
+  menuDiscountPercent: z.number().int().min(0).max(90),
   cartSuggestCategoryIds: z.array(z.number().int()).max(20),
 });
 

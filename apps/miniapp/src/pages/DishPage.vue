@@ -6,6 +6,8 @@ import { useCatalogStore } from '@/stores/catalog';
 import { description, ingredients, money, name } from '@/utils/format';
 import { haptic, hideBackButton, showBackButton } from '@/telegram';
 import AppIcon from '@/components/AppIcon.vue';
+import PriceTag from '@/components/PriceTag.vue';
+import DiscountBadge from '@/components/DiscountBadge.vue';
 import { canGoBack } from '@/composables/useKeepScroll';
 import FavoriteButton from '@/components/FavoriteButton.vue';
 import QuantityStepper from '@/components/QuantityStepper.vue';
@@ -67,7 +69,10 @@ onBeforeUnmount(hideBackButton);
             <span v-if="dish.isNew" class="tag bg-emerald-50 text-emerald-700">{{ $t('dish.new') }}</span>
             <span v-if="!dish.isAvailable" class="tag bg-red-50 text-red-600">{{ $t('dish.unavailable') }}</span>
           </div>
-          <p class="text-accent mt-3 text-[22px] font-bold">{{ money(dish.price) }}</p>
+          <div class="mt-3 flex items-center gap-2.5">
+            <PriceTag :price="dish.price" :base-price="dish.basePrice" size="lg" layout="inline" />
+            <DiscountBadge :percent="dish.discountPercent" class="!text-[12px]" />
+          </div>
           <p v-if="dish.pickupOnly" class="bg-accent-soft text-accent mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-[13px]">
             <AppIcon name="bag" :size="16" class="mt-0.5 flex-shrink-0" />{{ $t('dish.pickupOnlyHint') }}
           </p>

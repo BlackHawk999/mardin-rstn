@@ -49,6 +49,20 @@ export interface CategoryDto {
   sortOrder: number;
 }
 
+/**
+ * Price after a percentage discount, rounded down to 100 sum (in the customer's favour).
+ * The only place a discount is computed: the API uses it for the catalog and when pricing an order.
+ */
+export function discountedPrice(price: number, percent: number): number {
+  if (!percent || percent <= 0) return price;
+  return Math.floor((price * (100 - Math.min(percent, 100))) / 100 / 100) * 100;
+}
+
+/** A dish's own discount wins (0 excludes it from a menu-wide sale); otherwise the menu-wide discount applies. */
+export function effectiveDiscountPercent(dishPercent: number | null, menuPercent: number): number {
+  return dishPercent ?? menuPercent ?? 0;
+}
+
 export interface DishDto {
   id: number;
   categoryId: number;
@@ -59,7 +73,12 @@ export interface DishDto {
   ingredientsUz: string | null;
   ingredientsRu: string | null;
   imageUrl: string | null;
-  price: number; // UZS, integer
+  /** What the customer pays now (after discount), UZS. Use this everywhere for totals. */
+  price: number;
+  /** Price before discount; equal to `price` when there is no discount. */
+  basePrice: number;
+  /** Effective discount in %, 0 when none. */
+  discountPercent: number;
   weight: string | null; // e.g. "350 г"
   isNew: boolean;
   isHit: boolean;
@@ -93,6 +112,8 @@ export interface SettingsDto {
   deliveryByTaxi: boolean;
   /** Minimum items total for delivery orders. Pickup has no minimum. */
   minOrderAmount: number;
+  /** Discount on the whole menu, %, 0 = none. A dish's own discount overrides it. */
+  menuDiscountPercent: number;
   /** Categories whose dishes are offered in the cart ("Добавить к заказу"). */
   cartSuggestCategoryIds: number[];
 }
@@ -116,7 +137,10 @@ export interface OrderItemDto {
   dishId: number | null;
   nameUz: string;
   nameRu: string;
+  /** Unit price paid (after discount). */
   price: number;
+  /** Unit price before discount; null for old orders. */
+  basePrice: number | null;
   quantity: number;
   comment: string | null;
 }
@@ -178,8 +202,12 @@ export interface AdminCategoryDto extends CategoryDto {
   dishesCount: number;
 }
 
-export interface AdminDishDto extends DishDto {
+/** Admin sees the raw catalog price and the dish's own discount setting (null = follow the menu). */
+export interface AdminDishDto extends Omit<DishDto, 'discountPercent'> {
   isHidden: boolean;
+  discountPercent: number | null;
+  /** Discount actually applied right now (own or menu-wide), for the list view. */
+  effectiveDiscountPercent: number;
 }
 
 export interface AdminBannerDto extends BannerDto {

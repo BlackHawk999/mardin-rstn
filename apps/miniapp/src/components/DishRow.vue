@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { DishDto } from '@rt/shared';
 import { useCartStore } from '@/stores/cart';
-import { description, money, name } from '@/utils/format';
+import { description, name } from '@/utils/format';
 import { haptic } from '@/telegram';
 import AppIcon from './AppIcon.vue';
 import FavoriteButton from './FavoriteButton.vue';
 import QuantityStepper from './QuantityStepper.vue';
+import PriceTag from './PriceTag.vue';
+import DiscountBadge from './DiscountBadge.vue';
 
 const props = defineProps<{ dish: DishDto }>();
 const cart = useCartStore();
@@ -25,6 +27,7 @@ function onStep(next: number) {
   <RouterLink :to="{ name: 'dish', params: { id: String(dish.id) } }" class="card flex gap-3 p-2.5" :class="{ 'opacity-60': !dish.isAvailable }">
     <div class="bg-surface-2 relative h-[88px] w-[88px] flex-shrink-0 overflow-hidden rounded-[14px]">
       <img v-if="dish.imageUrl" :src="dish.imageUrl" :alt="name(dish)" class="h-full w-full object-cover" loading="lazy" />
+      <DiscountBadge class="absolute top-1.5 left-1.5" :percent="dish.discountPercent" />
     </div>
     <div class="flex min-w-0 flex-1 flex-col">
       <div class="flex items-start justify-between gap-2">
@@ -35,8 +38,8 @@ function onStep(next: number) {
         {{ description(dish) || dish.weight }}
       </p>
       <span v-if="dish.pickupOnly" class="bg-accent-soft text-accent mt-1 w-fit rounded-md px-1.5 py-0.5 text-[10px] font-semibold">{{ $t('dish.pickupOnly') }}</span>
-      <div class="mt-auto flex items-center justify-between pt-2">
-        <span class="text-accent text-[13px] font-bold">{{ money(dish.price) }}</span>
+      <div class="mt-auto flex items-end justify-between gap-2 pt-2">
+        <PriceTag :price="dish.price" :base-price="dish.basePrice" />
         <div v-if="cart.quantityOf(dish.id) > 0" @click.stop.prevent>
           <QuantityStepper small :value="cart.quantityOf(dish.id)" @change="onStep" />
         </div>

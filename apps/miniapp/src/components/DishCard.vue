@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { DishDto } from '@rt/shared';
 import { useCartStore } from '@/stores/cart';
-import { money, name } from '@/utils/format';
+import { name } from '@/utils/format';
 import { haptic } from '@/telegram';
 import AppIcon from './AppIcon.vue';
 import FavoriteButton from './FavoriteButton.vue';
 import QuantityStepper from './QuantityStepper.vue';
+import PriceTag from './PriceTag.vue';
+import DiscountBadge from './DiscountBadge.vue';
 
 const props = defineProps<{ dish: DishDto }>();
 const cart = useCartStore();
@@ -29,7 +31,8 @@ function onStep(next: number) {
       <div class="absolute top-2 right-2">
         <FavoriteButton :dish-id="dish.id" />
       </div>
-      <div class="absolute top-2 left-2 flex gap-1">
+      <div class="absolute top-2 left-2 flex flex-wrap gap-1 pr-10">
+        <DiscountBadge :percent="dish.discountPercent" />
         <span v-if="dish.isNew" class="rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">{{ $t('dish.new') }}</span>
         <span v-if="dish.isHit" class="bg-accent rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white">{{ $t('dish.hit') }}</span>
       </div>
@@ -41,7 +44,7 @@ function onStep(next: number) {
 
     <div class="flex flex-1 flex-col px-1 pt-2.5">
       <h3 class="line-clamp-2 text-[14px] leading-tight font-semibold">{{ name(dish) }}</h3>
-      <p class="text-accent mt-1 text-[13px] font-bold">{{ money(dish.price) }}</p>
+      <PriceTag class="mt-1" :price="dish.price" :base-price="dish.basePrice" />
       <div class="mt-2.5">
         <div v-if="cart.quantityOf(dish.id) > 0" class="flex justify-center" @click.stop.prevent>
           <QuantityStepper small :value="cart.quantityOf(dish.id)" @change="onStep" />

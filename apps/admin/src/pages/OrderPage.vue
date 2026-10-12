@@ -86,9 +86,12 @@ onUnmounted(() => window.clearInterval(timer));
                 <span class="text-muted ml-1 text-xs">{{ i.nameUz }}</span>
                 <p v-if="i.comment" class="text-accent mt-0.5 text-xs font-semibold">💬 {{ i.comment }}</p>
               </td>
-              <td class="text-muted text-right whitespace-nowrap">{{ money(i.price) }} × {{ i.quantity }}</td>
+              <td class="text-muted text-right whitespace-nowrap">
+                <s v-if="i.basePrice && i.basePrice > i.price" class="mr-1 text-xs">{{ money(i.basePrice) }}</s>{{ money(i.price) }} × {{ i.quantity }}
+              </td>
               <td class="text-right font-semibold whitespace-nowrap">{{ money(i.price * i.quantity) }}</td>
             </tr>
+            <tr v-if="order.discount"><td colspan="2" class="text-sale font-semibold">Скидка</td><td class="text-sale text-right font-semibold whitespace-nowrap">−{{ money(order.discount) }}</td></tr>
             <tr v-if="order.deliveryFee"><td colspan="2" class="text-muted">Доставка</td><td class="text-right">{{ money(order.deliveryFee) }}</td></tr>
             <tr v-else-if="order.type === 'delivery'"><td colspan="2" class="text-muted">Доставка</td><td class="text-right text-xs">такси, оплачивается отдельно</td></tr>
             <tr><td colspan="2" class="font-bold">Итого · {{ paymentLabel[order.paymentMethod] }}</td><td class="text-right text-base font-bold">{{ money(order.total) }}</td></tr>

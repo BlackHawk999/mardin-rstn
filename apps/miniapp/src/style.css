@@ -15,6 +15,7 @@
   --accent-soft: #f4ebe3; /* secondary "Savatga" button */
   --accent-text: #ffffff;
   --danger: #d9534f;
+  --sale: #c4422b; /* discounted prices and "-15%" badges: warm red that sits with the brown palette */
   --success: #3e9c5b;
   --warning: #d28b2c;
   --radius: 20px;

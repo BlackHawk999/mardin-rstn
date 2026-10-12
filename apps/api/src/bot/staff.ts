@@ -72,11 +72,13 @@ export function renderOrder(order: FullOrder, byTaxi: boolean, lastAction?: stri
   lines.push('');
 
   for (const i of order.items) {
-    lines.push(`• ${esc(i.nameRu)} × <b>${i.quantity}</b> — ${money(i.price * i.quantity)}`);
+    const was = i.basePrice && i.basePrice > i.price ? ` <s>${money(i.basePrice * i.quantity)}</s>` : '';
+    lines.push(`• ${esc(i.nameRu)} × <b>${i.quantity}</b> — ${money(i.price * i.quantity)}${was}`);
     if (i.comment) lines.push(`   💬 <b>${esc(i.comment)}</b>`);
   }
   lines.push('');
 
+  if (order.discount) lines.push(`🏷 Скидка: −${money(order.discount)}`);
   if (order.deliveryFee) lines.push(`Доставка: ${money(order.deliveryFee)}`);
   else if (order.type === 'delivery' && byTaxi) lines.push('Доставка: такси, оплачивается отдельно');
   lines.push(`<b>Итого: ${money(order.total)}</b> · ${order.paymentMethod === 'cash' ? 'наличные' : 'перевод'}`);

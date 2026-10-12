@@ -12,6 +12,7 @@ const defaults: SettingsDto = {
   deliveryFee: 0,
   deliveryByTaxi: false,
   minOrderAmount: 0,
+  menuDiscountPercent: 0,
   cartSuggestCategoryIds: [],
 };
 

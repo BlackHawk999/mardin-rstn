@@ -19,6 +19,14 @@ export const toAdminCategoryDto = (c: Category & { _count: { dishes: number } })
   dishesCount: c._count.dishes,
 });
 
-export const toAdminDishDto = (d: Dish): AdminDishDto => ({ ...toDishDto(d), isHidden: d.isHidden });
+/** Raw catalog price (what the admin edits) plus the dish's own discount setting and the one in effect. */
+export const toAdminDishDto = (d: Dish, menuDiscountPercent: number): AdminDishDto => ({
+  ...toDishDto(d, menuDiscountPercent),
+  price: d.price,
+  basePrice: d.price,
+  discountPercent: d.discountPercent,
+  effectiveDiscountPercent: toDishDto(d, menuDiscountPercent).discountPercent,
+  isHidden: d.isHidden,
+});
 
 export const toAdminBannerDto = (b: Banner): AdminBannerDto => ({ ...toBannerDto(b), sortOrder: b.sortOrder, isActive: b.isActive });

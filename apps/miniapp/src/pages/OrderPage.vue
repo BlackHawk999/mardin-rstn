@@ -151,9 +151,15 @@ onBeforeUnmount(() => {
             <p class="text-[14px] font-medium">{{ name(item) }} <span class="text-muted">× {{ item.quantity }}</span></p>
             <p v-if="item.comment" class="text-muted text-[12px]">💬 {{ item.comment }}</p>
           </div>
-          <span class="text-[14px] font-semibold whitespace-nowrap">{{ money(item.price * item.quantity) }}</span>
+          <span class="flex flex-col items-end text-right">
+            <span class="text-[14px] font-semibold whitespace-nowrap">{{ money(item.price * item.quantity) }}</span>
+            <s v-if="item.basePrice && item.basePrice > item.price" class="text-muted text-[11px] whitespace-nowrap">{{ money(item.basePrice * item.quantity) }}</s>
+          </span>
         </div>
         <div class="mt-2 space-y-1 border-t border-black/5 pt-2 text-[14px]">
+          <div v-if="order.discount" class="flex justify-between font-semibold" style="color: var(--sale)">
+            <span>{{ $t('cart.discount') }}</span><span class="whitespace-nowrap">−{{ money(order.discount) }}</span>
+          </div>
           <div v-if="order.deliveryFee" class="flex justify-between"><span class="text-muted">{{ $t('cart.deliveryFee') }}</span><span>{{ money(order.deliveryFee) }}</span></div>
           <div v-else-if="order.type === 'delivery'" class="flex justify-between"><span class="text-muted">{{ $t('cart.deliveryFee') }}</span><span>{{ $t('cart.deliveryByAddress') }}</span></div>
           <div class="flex justify-between text-[16px] font-bold"><span>{{ $t('cart.total') }}</span><span>{{ money(order.total) }}</span></div>

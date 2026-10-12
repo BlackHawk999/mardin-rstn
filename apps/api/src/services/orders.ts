@@ -1,5 +1,5 @@
 import type { CreateOrderInput, OrderStatus, OrderType } from '@rt/shared';
-import { STATUS_FLOW } from '@rt/shared';
+import { discountedPrice, effectiveDiscountPercent, STATUS_FLOW } from '@rt/shared';
 import type { User } from '@prisma/client';
 import { prisma } from '../db.js';
 import { getSettings, isOpenNow } from './settings.js';
@@ -44,19 +44,22 @@ export async function createOrder(user: User, input: CreateOrderInput) {
     if (pickupOnly.length) throw new OrderError('pickup_only', { dishIds: pickupOnly });
   }
 
-  // Never trust client-side prices: recompute from the catalog.
+  // Never trust client-side prices: recompute from the catalog, with the same discount formula the catalog shows.
   const items = input.items.map((i) => {
     const d = byId.get(i.dishId)!;
     return {
       dishId: d.id,
       nameUz: d.nameUz,
       nameRu: d.nameRu,
-      price: d.price,
+      price: discountedPrice(d.price, effectiveDiscountPercent(d.discountPercent, settings.menuDiscountPercent)),
+      basePrice: d.price,
       quantity: i.quantity,
       comment: i.comment?.trim() || null,
     };
   });
+  // itemsTotal is what the customer pays for the food (discounted); `discount` is the saving, kept for display only.
   const itemsTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const discount = items.reduce((sum, i) => sum + (i.basePrice - i.price) * i.quantity, 0);
   // Minimum applies to delivery only; pickup can be any amount.
   if (input.type === 'delivery' && itemsTotal < settings.minOrderAmount) {
     throw new OrderError('min_order', { minOrderAmount: settings.minOrderAmount });
@@ -82,8 +85,7 @@ export async function createOrder(user: User, input: CreateOrderInput) {
 
   // Taxi delivery: price depends on the address and is not part of the order total.
   const deliveryFee = input.type === 'delivery' && !settings.deliveryByTaxi ? settings.deliveryFee : 0;
-  const discount = 0;
-  const total = itemsTotal + deliveryFee - discount;
+  const total = itemsTotal + deliveryFee;
 
   return prisma.order.create({
     data: {

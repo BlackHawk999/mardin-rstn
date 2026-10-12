@@ -29,6 +29,11 @@ export const useCartStore = defineStore('cart', () => {
   const itemsTotal = computed(() =>
     items.value.reduce((sum, i) => sum + (catalog.dishById.get(i.dishId)?.price ?? 0) * i.quantity, 0),
   );
+  // Before discounts, and the saving; itemsTotal (what is paid) = baseItemsTotal - savings.
+  const baseItemsTotal = computed(() =>
+    items.value.reduce((sum, i) => sum + (catalog.dishById.get(i.dishId)?.basePrice ?? 0) * i.quantity, 0),
+  );
+  const savings = computed(() => baseItemsTotal.value - itemsTotal.value);
   const byTaxi = computed(() => type.value === 'delivery' && Boolean(catalog.settings?.deliveryByTaxi));
   const deliveryFee = computed(() => (type.value === 'delivery' && !byTaxi.value ? (catalog.settings?.deliveryFee ?? 0) : 0));
   const total = computed(() => itemsTotal.value + deliveryFee.value);
@@ -122,7 +127,7 @@ export const useCartStore = defineStore('cart', () => {
 
   return {
     items, type, paymentMethod, addressId, comment, hydrated,
-    count, itemsTotal, deliveryFee, byTaxi, total, meetsMinimum,
+    count, itemsTotal, baseItemsTotal, savings, deliveryFee, byTaxi, total, meetsMinimum,
     quantityOf, add, setQuantity, decrementDish, updateComment, remove, clear, pruneUnavailable, hydrate,
   };
 });

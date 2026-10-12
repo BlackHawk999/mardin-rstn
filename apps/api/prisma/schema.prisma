@@ -66,7 +66,9 @@ model Dish {
   ingredientsUz String? // comma-separated, shown as chips
   ingredientsRu String?
   imageUrl      String?
-  price         Int // UZS
+  price         Int // UZS, before any discount
+  /// Own discount, %: null = follow the menu-wide discount (settings), 0 = never discounted, 1..90 = this percent.
+  discountPercent Int?
   weight        String?
   isNew         Boolean  @default(false)
   isHit         Boolean  @default(false)
@@ -140,7 +142,8 @@ model OrderItem {
   dishId   Int?
   nameUz   String
   nameRu   String
-  price    Int // snapshot at order time
+  price    Int // snapshot at order time, after discount (what the customer pays per unit)
+  basePrice Int? // snapshot of the price before discount; null for orders placed before discounts existed
   quantity Int
   comment  String?
 
